@@ -275,6 +275,7 @@ Mobile:	false
 Platform:	'Linux x86_64'
 Scrollbars:	false
 UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0'
+WhiteJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/jswhite.lst'
 `
 	tests := []struct {
 		name string

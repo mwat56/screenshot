@@ -103,15 +103,10 @@ var (
 
 	// The actually used screenshot options:
 	ssOptions *ScreenshotParams = &ScreenshotParams{
-		Cookies:  false,
-		ImageAge: 0,
-		ImageDir: os.TempDir(),
-		/*
-			func() string {
-				dir, _ := filepath.Abs("./")
-				return dir
-			}(),
-		*/
+		CertErrors:   false,
+		Cookies:      false,
+		ImageAge:     0,
+		ImageDir:     os.TempDir(),
 		ImageHeight:  768,
 		ImageQuality: 100,
 		ImageScale:   0,
@@ -119,7 +114,6 @@ var (
 		JavaScript:   false,
 		Mobile:       false,
 		Platform:     "Linux x86_64",
-		CertErrors:   false,
 		Scrollbars:   false, //FIXME EXPERIMENTAL
 		UserAgent:    "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
 		WhiteJS: func() string {
@@ -169,6 +163,7 @@ func Setup(aOptions *ScreenshotParams) {
 		return // nothing to change
 	}
 
+	ssOptions.CertErrors = aOptions.CertErrors
 	ssOptions.Cookies = aOptions.Cookies
 	SetImageAge(aOptions.ImageAge)
 	SetImageDir(aOptions.ImageDir)
@@ -179,7 +174,6 @@ func Setup(aOptions *ScreenshotParams) {
 	ssOptions.Mobile = aOptions.Mobile
 	ssOptions.Platform = aOptions.Platform
 	SetImageScale(aOptions.ImageScale)
-	// ssOptions.Security = aOptions.Security
 	ssOptions.Scrollbars = aOptions.Scrollbars
 	SetUserAgent(aOptions.UserAgent)
 } // Setup()
@@ -208,6 +202,7 @@ func String() string {
 	sb.WriteString(fmt.Sprintf(fmtStr, "Platform", ssOptions.Platform))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Scrollbars", ssOptions.Scrollbars))
 	sb.WriteString(fmt.Sprintf(fmtStr, "UserAgent", ssOptions.UserAgent))
+	sb.WriteString(fmt.Sprintf(fmtStr, "WhiteJS", ssOptions.WhiteJS))
 
 	return sb.String()
 } // String()
@@ -290,7 +285,7 @@ func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 
 		// perform the actual scraping action:
 		chromedp.Navigate(aURL),
-		chromedp.Sleep(time.Second), // << 1 time to receive&render the page
+		chromedp.Sleep(time.Second << 1), // time to receive&render the page
 		chromedp.FullScreenshot(aResult, ssOptions.ImageQuality),
 	}
 } // configure()
@@ -638,18 +633,20 @@ func SetImageAge(aMaxAge time.Duration) {
 	}
 } // SetImageAge()
 
-// ImageDir returns the directory used to store the generated images.
+// ImageDir returns the directory to store the generated screenshot images.
 func ImageDir() string {
 	return ssOptions.ImageDir
 } // ImageDir()
 
 // SetImageDir sets the directory to use for storing the generated
-// images, returning an error if `aDirectory` can't be used.
+// screenshot images.
+//
+// If `aDirectory` is empty or invalid the current directory is used.
 //
 //	`aDirectory` The directory to store the generated images.
 func SetImageDir(aDirectory string) {
 	if aDirectory = strings.TrimSpace(aDirectory); 0 == len(aDirectory) {
-		aDirectory = "./"
+		aDirectory, _ = os.Getwd()
 	}
 	dir, err := filepath.Abs(aDirectory)
 	if (nil != err) || (0 == len(dir)) {
@@ -826,18 +823,20 @@ func SetPlatform(aPlatform string) {
 	ssOptions.Platform = aPlatform
 } // SetPlatform()
 
-// Scrollbars returns whether the virtual browser will show scrollbars.
+// Scrollbars returns whether the virtual browser will show scrollbars
+// (if available in web-page).
 //
 // `@EXPERIMENTAL`
 func Scrollbars() bool {
 	return ssOptions.Scrollbars
 } // Scrollbars()
 
-// SetScrollbars sets whether the virtual browser will show scrollbars.
+// SetScrollbars sets whether the virtual browser will show scrollbars
+// (if available in web-page).
 //
 // `@EXPERIMENTAL`
 //
-//	`aFactor` the new scale factor; `0` disables scaling.
+//	`aScrollbar` Flag whether to show scrollbars (if available).
 func SetScrollbars(aScrollbar bool) {
 	ssOptions.Scrollbars = aScrollbar
 } // SetScrollbars()

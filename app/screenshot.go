@@ -22,14 +22,14 @@ import (
 // reasonable default values.
 func parseCommandLine() (rURL string, rVerbose bool) {
 	var (
-		boolean, bC, bE, bM, jS bool
-		iH, iQ, iW              int
-		iS                      float64
-		uA, iD, jpf, s, jw      string
+		boolean, bC, bE, bM, bS, jS bool
+		iS                          float64
+		iH, iQ, iW                  int
+		uA, iD, jpf, s, jw          string
 	)
 
-	flag.StringVar(&rURL, "a", rURL,
-		"(*required*) the address/URL to lookup for a screenshot")
+	flag.StringVar(&rURL, "ba", rURL,
+		"(*required*) the address/URL for the browser's screenshot")
 
 	boolean = screenshot.Cookies()
 	s = fmt.Sprintf("allow the browser to handle web cookies (default %v)", boolean)
@@ -43,30 +43,34 @@ func parseCommandLine() (rURL string, rVerbose bool) {
 	s = fmt.Sprintf("let browser emulate a mobile device (default %v)", boolean)
 	flag.BoolVar(&bM, "bm", boolean, s)
 
-	flag.Float64Var(&iS, "bs", screenshot.ImageScale(),
-		"the browser's scale factor for the screenshot")
+	boolean = screenshot.Scrollbars() //FIXME EXPERIMENTAL
+	s = fmt.Sprintf("let browser show scrollbars if available (default %v)", boolean)
+	flag.BoolVar(&bS, "bs", boolean, s)
 
-	flag.StringVar(&iD, "d", "./",
-		"directory for storing the screenshot")
+	flag.StringVar(&iD, "id", screenshot.ImageDir(),
+		"directory for storing the screenshot image")
 
 	flag.IntVar(&iH, "ih", screenshot.ImageHeight(),
-		"max. height of the screenshot")
+		"max. height of the screenshot image")
 
 	flag.IntVar(&iQ, "iq", screenshot.ImageQuality(),
-		"quality of the screenshot")
+		"quality of the screenshot image")
+
+	flag.Float64Var(&iS, "is", screenshot.ImageScale(),
+		"the browser's scale factor for the screenshot image")
 
 	flag.IntVar(&iW, "iw", screenshot.ImageWidth(),
-		"max. width of the screenshot")
+		"max. width of the screenshot image")
 
 	boolean = screenshot.JavaScript()
-	s = fmt.Sprintf("allow use of JavaScript (default %v)", boolean)
-	flag.BoolVar(&jS, "j", boolean, s)
+	s = fmt.Sprintf("allow browser's use of JavaScript (default %v)", boolean)
+	flag.BoolVar(&jS, "js", boolean, s)
 
 	flag.StringVar(&jpf, "jp", screenshot.Platform(),
 		"Identifier the JavaScript `navigator.platform` should use")
 
 	flag.StringVar(&uA, "ju", screenshot.UserAgent(),
-		"description of the UserAgent to use")
+		"description of the browser's UserAgent to use")
 
 	flag.StringVar(&jw, "jw", screenshot.WhiteJS(),
 		"name of the JavaScript whitelist")
@@ -80,7 +84,7 @@ func parseCommandLine() (rURL string, rVerbose bool) {
 	screenshot.Setup(&screenshot.ScreenshotParams{
 		Cookies:      bC,
 		CertErrors:   bE,
-		ImageAge:     screenshot.ImageAge(), // use default value
+		ImageAge:     0, // i.e. default value
 		ImageDir:     iD,
 		ImageHeight:  iH,
 		ImageQuality: iQ,
@@ -89,7 +93,7 @@ func parseCommandLine() (rURL string, rVerbose bool) {
 		JavaScript:   jS,
 		Mobile:       bM,
 		Platform:     jpf,
-		Scrollbars:   screenshot.Scrollbars(), // use default value
+		Scrollbars:   bS, //FIXME EXPERIMENTAL
 		UserAgent:    uA,
 		WhiteJS:      jw,
 	})
@@ -101,8 +105,25 @@ func parseCommandLine() (rURL string, rVerbose bool) {
 func showHelp() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS]\n\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Fprint(os.Stderr, "\n")
+	// fmt.Fprint(os.Stderr, "\n")
 } // showHelp()
+
+// `exit()` does _not_ return but terminates the program.
+//
+//	`aText`
+//	`aHelp` Flag whether to show the commandline options.
+//	`isVerbose` Flag whether to show the configured screenshot options.
+//	`aCode` The program's exit code.
+func exit(aText string, aHelp, isVerbose bool, aCode int) {
+	fmt.Println(aText)
+	if isVerbose {
+		fmt.Println(screenshot.String())
+		showHelp()
+	} else if aHelp {
+		showHelp()
+	}
+	os.Exit(aCode)
+} // exit()
 
 // Main function running this program.
 func main() {
@@ -113,23 +134,15 @@ func main() {
 	)
 
 	if url, verbose = parseCommandLine(); 0 == len(url) {
-		fmt.Println("\nmissing URL - terminating ...")
-		showHelp()
-		os.Exit(1)
+		exit("\nmissing URL - terminating ...", true, verbose, 1)
 	}
 
 	if fName, err = screenshot.CreateImage(url); nil != err {
-		fmt.Fprint(os.Stderr, "\n", "error:", err)
-		showHelp()
-		os.Exit(1)
+		exit(fmt.Sprintln("\nerror:", err), true, verbose, 1)
 	}
 
-	if verbose {
-		fmt.Println(screenshot.String())
-	}
-
-	fmt.Println("generated URL screenshot:", fName, "\n\t")
-	os.Exit(0)
+	exit(fmt.Sprintln("generated URL screenshot:", fName, "\n\t"),
+		false, verbose, 0)
 } // main()
 
 /* _EoF_ */

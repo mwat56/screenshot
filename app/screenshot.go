@@ -3,7 +3,6 @@
                All rights reserved
            EMail : <support@mwat.de>
 */
-
 package main
 
 //lint:file-ignore ST1017 - I prefer Yoda conditions
@@ -16,112 +15,103 @@ import (
 	"github.com/mwat56/screenshot"
 )
 
-// `parseCommandLine()` handles the commandline arguments.
+// `processOptions()` handles the commandline arguments.
+//
 // While all properties of the `screenshot` library are exposed
-// only the `-a {URL}` argument is required everything else uses
+// only the `-a {URL}` argument is required all other options use
 // reasonable default values.
-func parseCommandLine() (rURL string, rVerbose bool) {
-	var (
-		boolean, bC, bE, bM, bS, jS bool
-		iS                          float64
-		iH, iQ, iW                  int
-		uA, iD, jpf, s, jw          string
-	)
+func processOptions() (rURL string, rVerbose bool) {
+	// get the library's default values:
+	opts := screenshot.Options()
 
-	flag.StringVar(&rURL, "ba", rURL,
+	// --- setup handling of the program's commandline options
+
+	flag.StringVar(&rURL, "a", rURL,
 		"(*required*) the address/URL for the browser's screenshot")
 
-	boolean = screenshot.Cookies()
-	s = fmt.Sprintf("allow the browser to handle web cookies (default %v)", boolean)
-	flag.BoolVar(&bC, "bc", boolean, s)
+	// --- browser related settings:
 
-	boolean = screenshot.CertErrors()
-	s = fmt.Sprintf("skip sites with Certificate errors (default %v)", boolean)
-	flag.BoolVar(&bE, "be", boolean, s)
+	s := fmt.Sprintf("allow the browser to handle web cookies (default %v)", opts.Cookies)
+	flag.BoolVar(&opts.Cookies, "bc", opts.Cookies, s)
 
-	boolean = screenshot.Mobile()
-	s = fmt.Sprintf("let browser emulate a mobile device (default %v)", boolean)
-	flag.BoolVar(&bM, "bm", boolean, s)
+	s = fmt.Sprintf("skip sites with Certificate errors (default %v)", opts.CertErrors)
+	flag.BoolVar(&opts.CertErrors, "be", opts.CertErrors, s)
 
-	boolean = screenshot.Scrollbars() //FIXME EXPERIMENTAL
-	s = fmt.Sprintf("let browser show scrollbars if available (default %v)", boolean)
-	flag.BoolVar(&bS, "bs", boolean, s)
+	s = fmt.Sprintf("let browser emulate a mobile device (default %v)", opts.Mobile)
+	flag.BoolVar(&opts.Mobile, "bm", opts.Mobile, s)
 
-	flag.StringVar(&iD, "id", screenshot.ImageDir(),
+	s = fmt.Sprintf("let browser show scrollbars if available (default %v)", opts.Scrollbars)
+	flag.BoolVar(&opts.Scrollbars, "bs", opts.Scrollbars, s)
+
+	// --- image related settings:
+
+	flag.StringVar(&opts.ImageDir, "id", opts.ImageDir,
 		"directory for storing the screenshot image")
 
-	flag.IntVar(&iH, "ih", screenshot.ImageHeight(),
+	flag.IntVar(&opts.ImageHeight, "ih", opts.ImageHeight,
 		"max. height of the screenshot image")
 
-	flag.IntVar(&iQ, "iq", screenshot.ImageQuality(),
+	flag.IntVar(&opts.ImageQuality, "iq", opts.ImageQuality,
 		"quality of the screenshot image")
 
-	flag.Float64Var(&iS, "is", screenshot.ImageScale(),
+	flag.Float64Var(&opts.ImageScale, "is", opts.ImageScale,
 		"the browser's scale factor for the screenshot image")
 
-	flag.IntVar(&iW, "iw", screenshot.ImageWidth(),
+	flag.IntVar(&opts.ImageWidth, "iw", opts.ImageWidth,
 		"max. width of the screenshot image")
 
-	boolean = screenshot.JavaScript()
-	s = fmt.Sprintf("allow browser's use of JavaScript (default %v)", boolean)
-	flag.BoolVar(&jS, "js", boolean, s)
+	// --- JavaScript related settings:
 
-	flag.StringVar(&jpf, "jp", screenshot.Platform(),
+	flag.StringVar(&opts.HostsAvoidJS, "ja", opts.HostsAvoidJS,
+		"name of sites that should avoid JavaScript running")
+
+	flag.StringVar(&opts.HostsNeedJS, "jn", opts.HostsNeedJS,
+		"name of sites that need JavaScript available")
+
+	flag.StringVar(&opts.Platform, "jp", opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
 
-	flag.StringVar(&uA, "ju", screenshot.UserAgent(),
+	s = fmt.Sprintf("allow browser's use of JavaScript (default %v)", opts.JavaScript)
+	flag.BoolVar(&opts.JavaScript, "js", opts.JavaScript, s)
+
+	flag.StringVar(&opts.UserAgent, "ju", opts.UserAgent,
 		"description of the browser's UserAgent to use")
 
-	flag.StringVar(&jw, "jw", screenshot.WhiteJS(),
-		"name of the JavaScript whitelist")
+	// --- general settings:
 
 	s = fmt.Sprintf("verbose (default %v)", rVerbose)
 	flag.BoolVar(&rVerbose, "v", rVerbose, s)
 
+	// --- process the commandline and setup the program:
+
 	flag.Usage = showHelp
 	flag.Parse()
-
-	screenshot.Setup(&screenshot.ScreenshotParams{
-		Cookies:      bC,
-		CertErrors:   bE,
-		ImageAge:     0, // i.e. default value
-		ImageDir:     iD,
-		ImageHeight:  iH,
-		ImageQuality: iQ,
-		ImageScale:   iS,
-		ImageWidth:   iW,
-		JavaScript:   jS,
-		Mobile:       bM,
-		Platform:     jpf,
-		Scrollbars:   bS, //FIXME EXPERIMENTAL
-		UserAgent:    uA,
-		WhiteJS:      jw,
-	})
+	screenshot.Setup(opts)
 
 	return
-} // parseCommandLine()
+} // processOptions()
 
-// showHelp lists the commandline options to `Stderr`.
+// `showHelp()` lists the commandline options to `Stderr`.
 func showHelp() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS]\n\n", os.Args[0])
 	flag.PrintDefaults()
-	// fmt.Fprint(os.Stderr, "\n")
 } // showHelp()
 
 // `exit()` does _not_ return but terminates the program.
 //
-//	`aText`
+//	`aText` Info message to present to the user.
 //	`aHelp` Flag whether to show the commandline options.
 //	`isVerbose` Flag whether to show the configured screenshot options.
 //	`aCode` The program's exit code.
 func exit(aText string, aHelp, isVerbose bool, aCode int) {
-	fmt.Println(aText)
+	fmt.Print("\n", aText, "\n")
 	if isVerbose {
 		fmt.Println(screenshot.String())
 		showHelp()
 	} else if aHelp {
 		showHelp()
 	}
+
 	os.Exit(aCode)
 } // exit()
 
@@ -133,12 +123,12 @@ func main() {
 		verbose    bool
 	)
 
-	if url, verbose = parseCommandLine(); 0 == len(url) {
-		exit("\nmissing URL - terminating ...", true, verbose, 1)
+	if url, verbose = processOptions(); 0 == len(url) {
+		exit("missing URL - terminating ...", true, verbose, 1)
 	}
 
 	if fName, err = screenshot.CreateImage(url); nil != err {
-		exit(fmt.Sprintln("\nerror:", err), true, verbose, 1)
+		exit(fmt.Sprintln("error:", err), true, verbose, 1)
 	}
 
 	exit(fmt.Sprintln("generated URL screenshot:", fName, "\n\t"),

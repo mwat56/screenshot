@@ -8,8 +8,13 @@ package screenshot
 
 import (
 	"context"
+	"io/fs"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -19,6 +24,113 @@ const (
 	agentLynx        = "Lynx/2.8.9dev.16 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/3.5.17"
 	agentFirefox     = `Mozilla/5.0 (X11; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0`
 )
+
+func setupScreenshot() {
+	SetImageDir(testImgDirectory)
+	// SetImageHeight(0)
+	SetImageQuality(75)
+	// SetImageWidth(1024)
+	SetJavaScript(false)
+	SetImageScale(0.99)
+	// SetUserAgent(agentFirefox)
+	// SetUserAgent(agentLynx)
+	// SetUserAgent(agentTest)
+} // setupScreenshot()
+
+func Test_chk4(t *testing.T) {
+	type args struct {
+		aURL       string
+		aHostsFile string
+	}
+	//
+	h1 := ""
+	u1 := ""
+	w1 := false
+	//
+	h2 := ssHostsAvoidJS
+	u2 := ""
+	w2 := false
+	//
+	h3 := ssHostsNeedJS
+	u3 := "Twitter.Com"
+	w3 := true
+	//
+	h4 := ssHostsNeedJS
+	u4 := "https://you.tube.me/"
+	w4 := false
+	//
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+		{" 1", args{u1, h1}, w1},
+		{" 2", args{u2, h2}, w2},
+		{" 3", args{u3, h3}, w3},
+		{" 4", args{u4, h4}, w4},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := chk4(tt.args.aURL, tt.args.aHostsFile); got != tt.want {
+				t.Errorf("chk4() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+} // Test_chk4()
+
+func Test_containsHost(t *testing.T) {
+	type args struct {
+		aNeedle   string
+		aHaystack *sort.StringSlice
+	}
+	//
+	n1 := ""
+	h1 := &sort.StringSlice{}
+	//
+	n2 := "www.example.org"
+	h2 := &sort.StringSlice{
+		"",
+		"# test list",
+		"",
+		"gibbet.nich",
+		"example.com",
+		"",
+		"# _EoF_",
+	} // h2
+	//
+	n3 := "www.example.com"
+	h3 := h2
+	//
+	n4 := "example.com"
+	h4 := &sort.StringSlice{
+		"",
+		"# test list",
+		".example.com",
+		"",
+		"# _EoF_",
+	} // h4
+	//
+
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+		{" 1", args{n1, h1}, false},
+		{" 2", args{n2, h2}, false},
+		{" 3", args{n3, h3}, true},
+		{" 4", args{n4, h4}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := containsHost(tt.args.aNeedle, tt.args.aHaystack); got != tt.want {
+				t.Errorf("listContains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+} // Test_containsHost()
 
 func Test_fileExt(t *testing.T) {
 	type args struct {
@@ -49,8 +161,7 @@ func Test_fileExt(t *testing.T) {
 } // Test_fileExt()
 
 func Test_generateImage(t *testing.T) {
-	SetImageDir(testImgDirectory)
-
+	setupScreenshot()
 	type args struct {
 		aContext context.Context
 		aURL     string
@@ -76,6 +187,125 @@ func Test_generateImage(t *testing.T) {
 	}
 } // Test_generateImage()
 
+func Test_readListFile(t *testing.T) {
+	const fName = "./Crash_Test_Dummies.lst"
+	list := `
+# Sites requiring JavaScript to work: 'jsneedsites.lst'
+
+Twitter.com
+
+Facebook.com
+
+YouTube.com
+
+Youtu.be
+
+# _EoF_
+`
+	writeFile(fName, []byte(list), nil)
+	defer func() {
+		_ = os.Remove(fName)
+	}()
+
+	n1 := ""
+	var w1 sort.StringSlice
+
+	n2 := "/dev/not/there"
+	w2 := w1
+
+	n3 := fName
+	w3 := sort.StringSlice{"twitter.com", "facebook.com", "youtube.com", "youtu.be"}
+
+	tests := []struct {
+		name      string
+		aFilename string
+		wantRList sort.StringSlice
+	}{
+		// TODO: Add test cases.
+		{" 1", n1, w1},
+		{" 2", n2, w2},
+		{" 3", n3, w3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotRList := readListFile(tt.aFilename); !reflect.DeepEqual(gotRList, tt.wantRList) {
+				t.Errorf("readListFile() = %v,\nwant %v", gotRList, tt.wantRList)
+			}
+		})
+	}
+} // Test_readListFile()
+
+func Test_removeIndex(t *testing.T) {
+	type args struct {
+		aList  sort.StringSlice
+		aIndex int
+	}
+
+	list := sort.StringSlice{
+		"0", "1", "2", "3", "4", "5",
+	}
+	//
+	l1 := list
+	i1 := 0
+	w1 := sort.StringSlice{
+		"1", "2", "3", "4", "5",
+	}
+	//
+	l2 := list
+	i2 := 1
+	w2 := sort.StringSlice{
+		"0", "2", "3", "4", "5",
+	}
+	//
+	l3 := list
+	i3 := 3
+	w3 := sort.StringSlice{
+		"0", "1", "2", "4", "5",
+	}
+	//
+	l4 := list
+	i4 := 5
+	w4 := sort.StringSlice{
+		"0", "1", "2", "3", "4",
+	}
+	//
+	l5 := list
+	i5 := 7
+	w5 := list
+	//
+	l6 := sort.StringSlice{}
+	i6 := 1
+	w6 := sort.StringSlice{}
+	//
+	l7 := sort.StringSlice{}
+	i7 := -1
+	w7 := sort.StringSlice{}
+	//
+
+	tests := []struct {
+		name string
+		args args
+		want sort.StringSlice
+	}{
+		// TODO: Add test cases.
+		{" 1", args{l1, i1}, w1},
+		{" 2", args{l2, i2}, w2},
+		{" 3", args{l3, i3}, w3},
+		{" 4", args{l4, i4}, w4},
+		{" 5", args{l5, i5}, w5},
+		{" 6", args{l6, i6}, w6},
+		{" 7", args{l7, i7}, w7},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeIndex(tt.args.aList, tt.args.aIndex); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("removeIndex() = »%v«,\nwant »%v«", got, tt.want)
+			}
+		})
+	}
+} // Test_removeIndex()
+
 func Test_sanitise(t *testing.T) {
 	tests := []struct {
 		name string
@@ -96,8 +326,64 @@ func Test_sanitise(t *testing.T) {
 	}
 } // Test_sanitise()
 
+func Test_stat(t *testing.T) {
+	const homeDir = "/home/matthias/devel/Go/src/github.com/mwat56/screenshot"
+	n1 := "./file is missing"
+	w1 := ""
+	o1 := false
+	//
+	n2 := "./LICENSE"
+	w2 := filepath.Join(homeDir, n2)
+	o2 := true
+	//
+	d3 := []byte("# dummy")
+	n3 := "./CrashTestDummy.txt" // >       -rw-r-----
+	if err := os.WriteFile(n3, d3, fs.FileMode(0640)); nil != err {
+		log.Println("Test_stat() error:", err)
+	}
+	defer func() {
+		os.Remove(n3)
+	}()
+	w3 := filepath.Join(homeDir, n3)
+	o3 := true
+
+	n4 := "/dev/null"
+	w4 := ""
+	o4 := false
+	//
+	n5 := "/Delete.Me"
+	w5 := ""
+	o5 := false
+	//
+
+	tests := []struct {
+		name      string
+		aFilename string
+		wantName  string
+		wantOK    bool
+	}{
+		// TODO: Add test cases.
+		{" 1", n1, w1, o1},
+		{" 2", n2, w2, o2},
+		{" 3", n3, w3, o3},
+		{" 4", n4, w4, o4},
+		{" 5", n5, w5, o5},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := stat(tt.aFilename)
+			if got != tt.wantName {
+				t.Errorf("stat() got = »%v«,\nwant »%v«", got, tt.wantName)
+			}
+			if got1 != tt.wantOK {
+				t.Errorf("stat() got1 = %v, want %v", got1, tt.wantOK)
+			}
+		})
+	}
+} // Test_stat()
+
 func Test_writeFile(t *testing.T) {
-	SetImageDir(testImgDirectory)
+	setupScreenshot()
 
 	n1 := PathFile("http://www.mwat.de/")
 	d1 := []byte("\nScreenShot_1\n")
@@ -147,15 +433,7 @@ func Test_writeFile(t *testing.T) {
 } // Test_writeFile()
 
 func TestCreateImage(t *testing.T) {
-	SetImageDir(testImgDirectory)
-	// SetImageHeight(0)
-	SetImageQuality(75)
-	// SetImageWidth(1024)
-	SetJavaScript(false)
-	SetImageScale(0.999)
-	// SetUserAgent(agentFirefox)
-	// SetUserAgent(agentLynx)
-	// SetUserAgent(agentTest)
+	setupScreenshot()
 	fileExt := ImageType()
 
 	u1 := "https://www.buzzfeednews.com/article/alexkantrowitz/how-the-retweet-ruined-the-internet"
@@ -236,14 +514,66 @@ func TestCreateImage(t *testing.T) {
 	}
 } // TestCreateImage()
 
+func testSetHosts4JS(t *testing.T, aNameConstant string) {
+	//
+	a1 := ""
+	w1 := "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/" + aNameConstant
+	//
+	a2 := filepath.Join(os.TempDir(), aNameConstant)
+	w2 := "" // file does not exist yet
+	//
+	a3 := "/dev/bla/bla"
+	w3 := ""
+	//
+	a4 := "/tmp"
+	w4 := ""
+	//
+	a5 := "dummy"
+	w5 := ""
+	//
+	a6 := aNameConstant
+	w6 := "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/" + aNameConstant
+	//
+	tests := []struct {
+		name      string
+		aPathname string
+		want      string
+	}{
+		// TODO: Add test cases.
+		{" 1", a1, w1},
+		{" 2", a2, w2},
+		{" 3", a3, w3},
+		{" 4", a4, w4},
+		{" 5", a5, w5},
+		{" 6", a6, w6},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := setHosts4JS(tt.aPathname, aNameConstant); got != tt.want {
+				t.Errorf("setHosts4JS() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+} // Test_setHosts4JS()
+
+func TestSetAvoidJS(t *testing.T) {
+	testSetHosts4JS(t, ssHostsAvoidJS)
+} // TestSetHostsAvoidJS()
+
+func TestSetHostsNeedJS(t *testing.T) {
+	testSetHosts4JS(t, ssHostsNeedJS)
+} // TestSetHostsNeedJS()
+
 func TestSetup(t *testing.T) {
-	o1 := &ScreenshotParams{}
-	o2 := &ScreenshotParams{
-		ImageAge: 0, // matches default value
-	}
-	o3 := &ScreenshotParams{
-		ImageDir: "",
-	}
+	setupScreenshot()
+
+	o1 := Options() // nothing changes
+
+	o2 := Options()
+	o2.ImageAge = 0 // matches default value
+
+	o3 := Options()
+	o3.ImageDir = "/tmp" // matches default value
 
 	tests := []struct {
 		name     string
@@ -256,26 +586,31 @@ func TestSetup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Setup(tt.aOptions)
+			if got := Setup(tt.aOptions); !reflect.DeepEqual(got, tt.aOptions) {
+				t.Errorf("Setup() = »%v«,\nwant »%v«", got, tt.aOptions)
+			}
 		})
 	}
 } // TestSetup()
 
 func TestString(t *testing.T) {
+	setupScreenshot()
 	w1 := `CertErrors:	false
 Cookies:	false
+HostsAvoidJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsavoidjs.list'
+HostsNeedJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsneedjs.list'
 ImageAge:	0
 ImageDir:	'/tmp'
 ImageHeight:	768
-ImageQuality:	100
-ImageScale:	0.00
+ImageQuality:	75
+ImageScale:	0.99
 ImageWidth:	896
 JavaScript:	false
+MaxProcessTime:	32000000000
 Mobile:	false
 Platform:	'Linux x86_64'
 Scrollbars:	false
 UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0'
-WhiteJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/jswhite.lst'
 `
 	tests := []struct {
 		name string

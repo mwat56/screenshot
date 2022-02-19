@@ -145,27 +145,6 @@ var (
 	ssReplaceNonAlphasRE = regexp.MustCompile(`\W+`)
 )
 
-// MaxProcessTime returns the timeout (in seconds) used to retrieve &
-// render a requested web page.
-func MaxProcessTime() time.Duration {
-	return ssOptions.MaxProcessTime
-} // MaxProcessTime()
-
-// SetMaxProcessTime sets the timeout used to retrieve & render
-// a requested web page.
-//
-// NOTE: A wrong (i.e. negative) value and `0` (zero) resets the
-// timeout value to its default od 32 seconds.
-//
-//	`aProcessTime` The new max. seconds allowed to process a web page.
-func SetMaxProcessTime(aProcessTime time.Duration) {
-	if 0 < aProcessTime {
-		ssOptions.MaxProcessTime = aProcessTime
-	} else {
-		ssOptions.MaxProcessTime = time.Second << 5
-	}
-} // SetMaxProcessTime()
-
 // Options returns the currently configured screenshot options.
 func Options() (rOptions *ScreenshotParams) {
 	rOptions = &ScreenshotParams{
@@ -977,7 +956,7 @@ func SetImageDir(aDirectory string) {
 	}
 
 	ssOptions.ImageDir = dir
-} // SetImageDirectory()
+} // SetImageDir()
 
 // ImageHeight is the max. height of the virtual screen used to render.
 // The default value is `768`.
@@ -1103,6 +1082,27 @@ func JavaScript() bool {
 func SetJavaScript(anAllow bool) {
 	ssOptions.JavaScript = anAllow
 } // SetJavaScript()
+
+// MaxProcessTime returns the timeout (in seconds) used to
+// retrieve & render a requested web page.
+func MaxProcessTime() time.Duration {
+	return ssOptions.MaxProcessTime / time.Second
+} // MaxProcessTime()
+
+// SetMaxProcessTime sets the timeout used to retrieve & render
+// a requested web page.
+//
+// NOTE: A wrong (i.e. negative) value and `0` (zero) resets the
+// timeout value to its default od 32 seconds.
+//
+//	`aProcessTime` The new max. seconds allowed to process a web page.
+func SetMaxProcessTime(aProcessTime time.Duration) {
+	if 0 < aProcessTime {
+		ssOptions.MaxProcessTime = aProcessTime * time.Second
+	} else {
+		ssOptions.MaxProcessTime = time.Second << 5
+	}
+} // SetMaxProcessTime()
 
 // Mobile returns whether the virtual browser should emulate a mobile
 // device.

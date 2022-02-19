@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mwat56/screenshot"
 )
@@ -42,6 +43,11 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	s = fmt.Sprintf("let browser show scrollbars if available (default %v)", opts.Scrollbars)
 	flag.BoolVar(&opts.Scrollbars, "bs", opts.Scrollbars, s)
+
+	maxProcessTime := int64(opts.MaxProcessTime / time.Second)
+	// s = fmt.Sprintf("max. time (seconds) allowed to process a single web page (default %v)", opts.MaxProcessTime)
+	flag.Int64Var(&maxProcessTime, "bt", maxProcessTime,
+		"max. time (seconds) allowed to process a single web page")
 
 	// --- image related settings:
 
@@ -86,6 +92,12 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	flag.Usage = showHelp
 	flag.Parse()
+
+	if 0 < maxProcessTime {
+		opts.MaxProcessTime = time.Duration(maxProcessTime) * time.Second
+	} else {
+		opts.MaxProcessTime = time.Second << 5
+	}
 	screenshot.Setup(opts)
 
 	return

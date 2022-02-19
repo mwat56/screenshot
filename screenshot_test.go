@@ -1,6 +1,6 @@
 /*
    Copyright © 2022 M.Watermann, 10247 Berlin, Germany
-                   All rights reserved
+                 All rights reserved
                EMail : <support@mwat.de>
 */
 
@@ -26,13 +26,17 @@ const (
 )
 
 func setupScreenshot() {
+	SetImageAge(0)
+	SetCookies(false)
 	SetImageDir(testImgDirectory)
-	// SetImageHeight(0)
+	SetImageHeight(768)
 	SetImageQuality(75)
-	// SetImageWidth(1024)
+	SetImageWidth(896)
 	SetJavaScript(false)
 	SetImageScale(0.99)
-	// SetUserAgent(agentFirefox)
+	SetMaxProcessTime(24)
+	SetScrollbars(true)
+	SetUserAgent(agentFirefox)
 	// SetUserAgent(agentLynx)
 	// SetUserAgent(agentTest)
 } // setupScreenshot()
@@ -606,11 +610,11 @@ ImageQuality:	75
 ImageScale:	0.99
 ImageWidth:	896
 JavaScript:	false
-MaxProcessTime:	32000000000
+MaxProcessTime:	24000000000
 Mobile:	false
 Platform:	'Linux x86_64'
-Scrollbars:	false
-UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0'
+Scrollbars:	true
+UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0'
 `
 	tests := []struct {
 		name string

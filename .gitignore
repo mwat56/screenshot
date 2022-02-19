@@ -1,9 +1,13 @@
 *~
 *.bak
-app/*.jpeg
-app/*.png
+app/screenshot
 bin/
+binarySearch.go
+*.gif
 .git/
+*.jpeg
+*.jpg
+*.png
 TODO*
 .vscode/
 XXX*

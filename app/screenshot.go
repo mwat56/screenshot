@@ -45,7 +45,6 @@ func processOptions() (rURL string, rVerbose bool) {
 	flag.BoolVar(&opts.Scrollbars, "bs", opts.Scrollbars, s)
 
 	maxProcessTime := int64(opts.MaxProcessTime / time.Second)
-	// s = fmt.Sprintf("max. time (seconds) allowed to process a single web page (default %v)", opts.MaxProcessTime)
 	flag.Int64Var(&maxProcessTime, "bt", maxProcessTime,
 		"max. time (seconds) allowed to process a single web page")
 
@@ -88,16 +87,14 @@ func processOptions() (rURL string, rVerbose bool) {
 	s = fmt.Sprintf("verbose (default %v)", rVerbose)
 	flag.BoolVar(&rVerbose, "v", rVerbose, s)
 
-	// --- process the commandline and setup the program:
+	// --- process the commandline:
 
 	flag.Usage = showHelp
 	flag.Parse()
 
-	if 0 < maxProcessTime {
-		opts.MaxProcessTime = time.Duration(maxProcessTime) * time.Second
-	} else {
-		opts.MaxProcessTime = time.Second << 5
-	}
+	// --- setup the program:
+
+	opts.MaxProcessTime = time.Duration(maxProcessTime)
 	screenshot.Setup(opts)
 
 	return

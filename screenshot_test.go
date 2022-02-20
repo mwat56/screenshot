@@ -6,6 +6,8 @@
 
 package screenshot
 
+//lint:file-ignore ST1017 - I prefer Yoda conditions
+
 import (
 	"context"
 	"io/fs"
@@ -303,7 +305,7 @@ func Test_removeIndex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := removeIndex(tt.args.aList, tt.args.aIndex); !reflect.DeepEqual(got, tt.want) {
+			if got := removeIndex(tt.args.aList, tt.args.aIndex); (0 < len(got)) && (0 < len(tt.want)) && (!reflect.DeepEqual(got, tt.want)) {
 				t.Errorf("removeIndex() = »%v«,\nwant »%v«", got, tt.want)
 			}
 		})
@@ -610,7 +612,7 @@ ImageQuality:	75
 ImageScale:	0.99
 ImageWidth:	896
 JavaScript:	false
-MaxProcessTime:	24000000000
+MaxProcessTime:	24
 Mobile:	false
 Platform:	'Linux x86_64'
 Scrollbars:	true

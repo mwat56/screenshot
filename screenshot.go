@@ -214,7 +214,7 @@ func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
 	SetImageScale(aOptions.ImageScale)
 	SetImageWidth(aOptions.ImageWidth)
 	ssOptions.JavaScript = aOptions.JavaScript
-	ssOptions.MaxProcessTime = aOptions.MaxProcessTime
+	SetMaxProcessTime(aOptions.MaxProcessTime)
 	ssOptions.Mobile = aOptions.Mobile
 	ssOptions.Platform = aOptions.Platform
 	ssOptions.Scrollbars = aOptions.Scrollbars
@@ -245,7 +245,7 @@ func String() string {
 	sb.WriteString(fmt.Sprintf(fmtFlt, "ImageScale", ssOptions.ImageScale))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageWidth", ssOptions.ImageWidth))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "JavaScript", ssOptions.JavaScript))
-	sb.WriteString(fmt.Sprintf(fmtInt, "MaxProcessTime", ssOptions.MaxProcessTime))
+	sb.WriteString(fmt.Sprintf(fmtInt, "MaxProcessTime", ssOptions.MaxProcessTime/time.Second))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Mobile", ssOptions.Mobile))
 	sb.WriteString(fmt.Sprintf(fmtStr, "Platform", ssOptions.Platform))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Scrollbars", ssOptions.Scrollbars))
@@ -625,29 +625,38 @@ reStart:
 //	`aList` The string list to handle.
 //	`aIndex` The list index to remove.
 func removeIndex(aList sort.StringSlice, aIndex int) sort.StringSlice {
+	// Working with the `append` function on slices without taking care
+	// of the origin and destination of the values we are dealing with.
+	// Since we do _not_ want to modify the given `aList` we create a
+	// new list to return to the caller.
+	// That way even if the caller later modifies this function's result
+	// the original (`aList`) values remain as-is.
+	var result sort.StringSlice
 	lastIdx := len(aList) - 1 // index of the list's last element
 
 	// We can't use a `switch` statement here because the order of
 	// tests is significant (but not guaranteed with `switch/case`).
 	if 0 > lastIdx {
-		return aList // empty list
+		// return a new empty list
+		return result
 	}
 
 	if aIndex > lastIdx {
-		return aList[:] // the whole list
+		// copy the whole list:
+		return append(result, aList[:]...)
 	}
 
 	if 0 == aIndex {
-		return aList[1:] // skip the very first list element
+		// skip the very first list element:
+		return append(result, aList[1:]...)
 	}
 
 	if aIndex == lastIdx {
-		return aList[:lastIdx] // omit the last list element
+		// omit the last list element:
+		return append(result, aList[:lastIdx]...)
 	}
 
-	// Here we must make sure that we do _not_ modify `aList`
-	// but return the new list `result`.
-	var result sort.StringSlice
+	// return a list without the `aIndex` element in `aList`:
 	return append(append(result, aList[:aIndex]...), aList[aIndex+1:]...)
 } // removeIndex()
 
@@ -1098,7 +1107,13 @@ func MaxProcessTime() time.Duration {
 //	`aProcessTime` The new max. seconds allowed to process a web page.
 func SetMaxProcessTime(aProcessTime time.Duration) {
 	if 0 < aProcessTime {
-		ssOptions.MaxProcessTime = aProcessTime * time.Second
+		if time.Second > aProcessTime {
+			// we assume it's actually a `Second` value
+			ssOptions.MaxProcessTime = aProcessTime * time.Second
+		} else {
+			// we assume it's already a `Nanosecond` value
+			ssOptions.MaxProcessTime = aProcessTime
+		}
 	} else {
 		ssOptions.MaxProcessTime = time.Second << 5
 	}

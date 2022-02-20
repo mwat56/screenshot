@@ -87,8 +87,8 @@ type ScreenshotParams struct {
 	// Flag whether to allow JavaScript in retrieved pages.
 	JavaScript bool
 
-	// Timeout duration (seconds) for page processing
-	MaxProcessTime time.Duration
+	// Timeout (in seconds) for page processing.
+	MaxProcessTime int64
 
 	// Flag whether to emulate a mobile device or not.
 	// This includes viewport meta tag, overlay scrollbars, text
@@ -134,7 +134,7 @@ var (
 		ImageScale:     0,
 		ImageWidth:     896,
 		JavaScript:     false,
-		MaxProcessTime: time.Second << 5, // i.e. 32 seconds
+		MaxProcessTime: 32,
 		Mobile:         false,
 		Platform:       "Linux x86_64",
 		Scrollbars:     false,
@@ -245,7 +245,7 @@ func String() string {
 	sb.WriteString(fmt.Sprintf(fmtFlt, "ImageScale", ssOptions.ImageScale))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageWidth", ssOptions.ImageWidth))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "JavaScript", ssOptions.JavaScript))
-	sb.WriteString(fmt.Sprintf(fmtInt, "MaxProcessTime", ssOptions.MaxProcessTime/time.Second))
+	sb.WriteString(fmt.Sprintf(fmtInt, "MaxProcessTime", ssOptions.MaxProcessTime))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Mobile", ssOptions.Mobile))
 	sb.WriteString(fmt.Sprintf(fmtStr, "Platform", ssOptions.Platform))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Scrollbars", ssOptions.Scrollbars))
@@ -817,7 +817,7 @@ func CreateImage(aURL string) (string, error) {
 	)
 
 	//TODO turn `Background()` into calltime argument:
-	ctx, cancel = context.WithTimeout(context.Background(), ssOptions.MaxProcessTime)
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*time.Duration(ssOptions.MaxProcessTime))
 	defer func() {
 		if r := recover(); nil != r {
 			// Timing problems or invalid site data might indirectly
@@ -1094,8 +1094,8 @@ func SetJavaScript(anAllow bool) {
 
 // MaxProcessTime returns the timeout (in seconds) used to
 // retrieve & render a requested web page.
-func MaxProcessTime() time.Duration {
-	return ssOptions.MaxProcessTime / time.Second
+func MaxProcessTime() int64 {
+	return ssOptions.MaxProcessTime
 } // MaxProcessTime()
 
 // SetMaxProcessTime sets the timeout used to retrieve & render
@@ -1105,17 +1105,11 @@ func MaxProcessTime() time.Duration {
 // timeout value to its default od 32 seconds.
 //
 //	`aProcessTime` The new max. seconds allowed to process a web page.
-func SetMaxProcessTime(aProcessTime time.Duration) {
+func SetMaxProcessTime(aProcessTime int64) {
 	if 0 < aProcessTime {
-		if time.Second > aProcessTime {
-			// we assume it's actually a `Second` value
-			ssOptions.MaxProcessTime = aProcessTime * time.Second
-		} else {
-			// we assume it's already a `Nanosecond` value
-			ssOptions.MaxProcessTime = aProcessTime
-		}
+		ssOptions.MaxProcessTime = aProcessTime
 	} else {
-		ssOptions.MaxProcessTime = time.Second << 5
+		ssOptions.MaxProcessTime = 32
 	}
 } // SetMaxProcessTime()
 

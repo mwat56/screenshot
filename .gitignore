@@ -1,5 +1,6 @@
 *~
 *.bak
+app/*.list
 app/screenshot
 bin/
 binarySearch.go

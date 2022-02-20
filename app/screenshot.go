@@ -27,65 +27,65 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- setup handling of the program's commandline options
 
-	flag.StringVar(&rURL, "a", rURL,
-		"(*required*) the address/URL for the browser's screenshot")
-
 	// --- browser related settings:
 
-	s := fmt.Sprintf("allow the browser to handle web cookies (default %v)", opts.Cookies)
-	flag.BoolVar(&opts.Cookies, "bc", opts.Cookies, s)
+	s := fmt.Sprintf(`allow the browser to handle web cookies (default "%v")`, opts.Cookies)
+	flag.BoolVar(&opts.Cookies, `bc`, opts.Cookies, s)
 
-	s = fmt.Sprintf("skip sites with Certificate errors (default %v)", opts.CertErrors)
-	flag.BoolVar(&opts.CertErrors, "be", opts.CertErrors, s)
+	s = fmt.Sprintf(`skip sites with Certificate errors (default "%v")`, opts.CertErrors)
+	flag.BoolVar(&opts.CertErrors, `be`, opts.CertErrors, s)
 
-	s = fmt.Sprintf("let browser emulate a mobile device (default %v)", opts.Mobile)
-	flag.BoolVar(&opts.Mobile, "bm", opts.Mobile, s)
+	s = fmt.Sprintf(`let browser emulate a mobile device (default "%v")`, opts.Mobile)
+	flag.BoolVar(&opts.Mobile, `bm`, opts.Mobile, s)
 
-	s = fmt.Sprintf("let browser show scrollbars if available (default %v)", opts.Scrollbars)
-	flag.BoolVar(&opts.Scrollbars, "bs", opts.Scrollbars, s)
+	s = fmt.Sprintf(`let browser show scrollbars if available (default "%v")`, opts.Scrollbars)
+	flag.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
 
 	maxProcessTime := int64(opts.MaxProcessTime / time.Second)
-	flag.Int64Var(&maxProcessTime, "bt", maxProcessTime,
+	flag.Int64Var(&maxProcessTime, `bt`, maxProcessTime,
 		"max. time (seconds) allowed to process a single web page")
 
 	// --- image related settings:
 
-	flag.StringVar(&opts.ImageDir, "id", opts.ImageDir,
+	flag.StringVar(&opts.ImageDir, `id`, opts.ImageDir,
 		"directory for storing the screenshot image")
 
-	flag.IntVar(&opts.ImageHeight, "ih", opts.ImageHeight,
+	flag.IntVar(&opts.ImageHeight, `ih`, opts.ImageHeight,
 		"max. height of the screenshot image")
 
-	flag.IntVar(&opts.ImageQuality, "iq", opts.ImageQuality,
+	flag.IntVar(&opts.ImageQuality, `iq`, opts.ImageQuality,
 		"quality of the screenshot image")
 
-	flag.Float64Var(&opts.ImageScale, "is", opts.ImageScale,
+	flag.Float64Var(&opts.ImageScale, `is`, opts.ImageScale,
 		"the browser's scale factor for the screenshot image")
 
-	flag.IntVar(&opts.ImageWidth, "iw", opts.ImageWidth,
+	flag.IntVar(&opts.ImageWidth, `iw`, opts.ImageWidth,
 		"max. width of the screenshot image")
 
 	// --- JavaScript related settings:
 
-	flag.StringVar(&opts.HostsAvoidJS, "ja", opts.HostsAvoidJS,
-		"name of sites that should avoid JavaScript running")
+	flag.StringVar(&opts.HostsAvoidJS, `ja`, opts.HostsAvoidJS,
+		"name of text-file that contains sites better avoiding JavaScript")
 
-	flag.StringVar(&opts.HostsNeedJS, "jn", opts.HostsNeedJS,
-		"name of sites that need JavaScript available")
+	flag.StringVar(&opts.HostsNeedJS, `jn`, opts.HostsNeedJS,
+		"name of text-file that contains sites needing JavaScript")
 
-	flag.StringVar(&opts.Platform, "jp", opts.Platform,
+	flag.StringVar(&opts.Platform, `jp`, opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
 
-	s = fmt.Sprintf("allow browser's use of JavaScript (default %v)", opts.JavaScript)
-	flag.BoolVar(&opts.JavaScript, "js", opts.JavaScript, s)
+	s = fmt.Sprintf(`allow browser's use of JavaScript (default "%v")`, opts.JavaScript)
+	flag.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
 
-	flag.StringVar(&opts.UserAgent, "ju", opts.UserAgent,
-		"description of the browser's UserAgent to use")
+	flag.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,
+		`description of the UserAgent the browser should report`)
 
-	// --- general settings:
+	// --- general options:
 
-	s = fmt.Sprintf("verbose (default %v)", rVerbose)
-	flag.BoolVar(&rVerbose, "v", rVerbose, s)
+	s = fmt.Sprintf(`(*required*) the URL for the browser's screenshot (default "%v")`, rURL)
+	flag.StringVar(&rURL, `u`, rURL, s)
+
+	s = fmt.Sprintf(`verbose (default "%v")`, rVerbose)
+	flag.BoolVar(&rVerbose, `v`, rVerbose, s)
 
 	// --- process the commandline:
 

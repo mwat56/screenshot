@@ -49,67 +49,78 @@ const (
 
 // ScreenshotParams bundles all available configuration Options and
 // pass them to the `Setup()` function in a single call.
-type ScreenshotParams struct {
+type (
+	ScreenshotParams struct {
+		// Flag whether certificate errors should be ignored.
+		CertErrors bool
 
-	// Flag whether certificate errors should be ignored.
-	CertErrors bool
+		// Allow use of web cookies
+		Cookies bool
 
-	// Allow use of web cookies
-	Cookies bool
+		// Path/filename of a list of web hosts/domains where JavaScript
+		// running should be avoided (defaults to a file in user's homedir).
+		HostsAvoidJS string
 
-	// Path/filename of a list of web hosts/domains where JavaScript
-	// running should be avoided (defaults to a file in user's homedir).
-	HostsAvoidJS string
+		// Path/filename of a list of web hosts/domains where JavaScript
+		// is required to work (defaults to a file in user's homedir).
+		HostsNeedJS string
 
-	// Path/filename of a list of web hosts/domains where JavaScript
-	// is required to work (defaults to a file in user's homedir).
-	HostsNeedJS string
+		// Max. age of cached page screenshot images (in hours).
+		ImageAge int64
 
-	// Max. age of cached page screenshot images (in seconds).
-	ImageAge time.Duration
+		// Directory to store the generated screenshot images.
+		ImageDir string
 
-	// Directory to store the generated screenshot images.
-	ImageDir string
+		// Max. height of the screenshot image to generate.
+		ImageHeight int
 
-	// Max. height of the screenshot image to generate.
-	ImageHeight int
+		// Quality (in percent) of the screenshot image to generate.
+		ImageQuality int
 
-	// Quality (in percent) of the screenshot image to generate.
-	ImageQuality int
+		// The virtual browser's scale factor value.
+		// 0 disables the override.
+		ImageScale float64
 
-	// The virtual browser's scale factor value.
-	// 0 disables the override.
-	ImageScale float64
+		// Max. width of the screenshot image to generate.
+		ImageWidth int
 
-	// Max. width of the screenshot image to generate.
-	ImageWidth int
+		// Flag whether to allow JavaScript in retrieved pages.
+		JavaScript bool
 
-	// Flag whether to allow JavaScript in retrieved pages.
-	JavaScript bool
+		// Timeout (in seconds) for page processing.
+		MaxProcessTime int64
 
-	// Timeout (in seconds) for page processing.
-	MaxProcessTime int64
+		// Flag whether to emulate a mobile device or not.
+		// This includes viewport meta tag, overlay scrollbars, text
+		// autosizing and more.
+		Mobile bool
 
-	// Flag whether to emulate a mobile device or not.
-	// This includes viewport meta tag, overlay scrollbars, text
-	// autosizing and more.
-	Mobile bool
+		// The identifier the JavaScript `navigator.platform` should return.
+		Platform string
 
-	// The identifier the JavaScript `navigator.platform` should return.
-	Platform string
+		// Flag whether to show the scraped web-page's scrollbars.
+		Scrollbars bool
 
-	// Flag whether to show the scraped web-page's scrollbars.
-	Scrollbars bool
+		// User Agent to use when queuing external sites.
+		UserAgent string
+	}
 
-	// User Agent to use when queuing external sites.
-	UserAgent string
-}
+	tAvoidNeedFile struct {
+		// Time of next reading a Avoid/Need hosts file:
+		nextTime time.Time
+
+		// List of hosts to test against:
+		list sort.StringSlice
+	}
+)
 
 var (
-	// memory list with sites to avoid JavaScript
-	ssAvoidJSsites sort.StringSlice
+	// List with sites to avoid JavaScript:
+	ssAvoidJSsites tAvoidNeedFile = tAvoidNeedFile{
+		nextTime: time.Now(),
+	}
 
-	// R/O RegEx to extract a filename's extension.
+	// R/O RegEx to extract a filename's extension:
 	ssExtRE = regexp.MustCompile(`(\.\w+)([\?\#].*)?$`)
 
 	// Internal lookup table for image type and filename extension.
@@ -118,8 +129,10 @@ var (
 		true:  `jpeg`,
 	}
 
-	// memory list with sites to use JavaScript
-	ssNeedJSsites sort.StringSlice
+	// List with sites to use JavaScript:
+	ssNeedJSsites tAvoidNeedFile = tAvoidNeedFile{
+		nextTime: time.Now(),
+	}
 
 	// The initially used screenshot options:
 	ssOptions *ScreenshotParams = &ScreenshotParams{
@@ -140,6 +153,9 @@ var (
 		Scrollbars:     false,
 		UserAgent:      "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
 	}
+
+	// Number of minutes to wait before re-reading Avoid/Need hosts files:
+	ssReadWaitTime int64 = 1
 
 	// R/O RegEx to find all non alpha/digits in URLs.
 	ssReplaceNonAlphasRE = regexp.MustCompile(`\W+`)
@@ -266,23 +282,23 @@ func String() string {
 //	`aList` The internal string list to hold the lines of `aHostsFile`.
 func chk4(aURL, aHostsFilename string) bool {
 	var (
-		err       error
-		hostsList *sort.StringSlice
-		needle    string
-		URL       *url.URL
+		err    error
+		hosts  *tAvoidNeedFile
+		needle string
+		URL    *url.URL
 	)
-	switch true {
-	case (0 == len(aHostsFilename)) || (0 == len(aURL)):
+
+	// We can't use `switch` here since the order of tests is
+	// significant (which is guaranteed with `switch`).
+	if (0 == len(aHostsFilename)) || (0 == len(aURL)) {
 		return false
-
-	case (strings.HasSuffix(aHostsFilename, ssHostsAvoidJS)):
-		hostsList = &ssAvoidJSsites
-
-	case (strings.HasSuffix(aHostsFilename, ssHostsNeedJS)):
-		hostsList = &ssNeedJSsites
-
-	default:
-		return false // something's wrong
+	}
+	if strings.HasSuffix(aHostsFilename, ssHostsAvoidJS) {
+		hosts = &ssAvoidJSsites
+	} else if strings.HasSuffix(aHostsFilename, ssHostsNeedJS) {
+		hosts = &ssNeedJSsites
+	} else {
+		return false // unrecognised filename
 	}
 
 	if URL, err = url.Parse(aURL); nil != err {
@@ -296,12 +312,14 @@ func chk4(aURL, aHostsFilename string) bool {
 		}
 	}
 
-	// read site list from disk
-	if *hostsList = readListFile(aHostsFilename); 0 == hostsList.Len() {
-		return false
+	if (0 == hosts.list.Len()) || time.Now().After(hosts.nextTime) {
+		hosts.nextTime = time.Now().Add(time.Duration(ssReadWaitTime) * time.Minute)
+		if hosts.list = readListFile(aHostsFilename); 0 == hosts.list.Len() {
+			return false
+		}
 	}
 
-	return containsHost(strings.ToLower(needle), hostsList)
+	return containsHost(strings.ToLower(needle), &hosts.list)
 } // chk4()
 
 // `cleanupOutput()` removes unneeded leading data from `aRawData`
@@ -356,13 +374,13 @@ func cleanupOutput(aRawData []byte) []byte {
 func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 	enableJS := ssOptions.JavaScript
 	if enableJS {
-		// If the domain is found in the 'avoid' list then we do
-		// NOT want to activate JS here:
-		enableJS = !chk4(aURL, ssOptions.HostsAvoidJS /*, &ssAvoidJSsites*/)
+		// If the domain is found in the 'avoid' list then we
+		// do NOT want to activate JS here:
+		enableJS = !chk4(aURL, ssOptions.HostsAvoidJS)
 	} else {
 		// If the domain is found in the 'need' list then we DO
 		// want to activate JS here:
-		enableJS = chk4(aURL, ssOptions.HostsNeedJS /*, &ssNeedJSsites*/)
+		enableJS = chk4(aURL, ssOptions.HostsNeedJS)
 	}
 	waitDuration := time.Second << 1 // two seconds
 	if enableJS {
@@ -417,7 +435,7 @@ func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 func containsHost(aNeedle string, aHaystack *sort.StringSlice) bool {
 	for _, entry := range *aHaystack {
 		if (0 == len(entry)) || `#` == entry[0:1] {
-			continue // should never happen: readListFile() removes
+			continue // shouldn't happen: `readListFile()` removes
 			// those lines, but UnitTests might send such lists.
 		}
 		if strings.HasSuffix(aNeedle, entry) {
@@ -504,8 +522,8 @@ func exists(aFilename string) bool {
 		return false
 	}
 
-	if 10240 > fi.Size() {
-		// Empty and small (i.e. `<10KB`) files are ignored.
+	if 8192 > fi.Size() {
+		// Empty and small (i.e. `<8KB`) files are ignored.
 		// File sizes smaller than ~10KB indicate some kind of
 		// error during retrieval of the web page or rendering it.
 		// Valid preview images take approximately between 10 to
@@ -514,7 +532,7 @@ func exists(aFilename string) bool {
 		return false
 	}
 
-	maxTime := fi.ModTime().Add(ssOptions.ImageAge * time.Second)
+	maxTime := fi.ModTime().Add(time.Duration(ssOptions.ImageAge) * time.Hour)
 	// files too old are ignored
 	return time.Now().Before(maxTime)
 } // exists()
@@ -597,7 +615,7 @@ func readListFile(aFilename string) (rList sort.StringSlice) {
 reStart:
 	for idx, line := range rList {
 		if idx < syncIdx {
-			continue // skip: go to the next line
+			continue // skip: go to next line
 		} else if idx > syncIdx {
 			syncIdx = idx
 		}
@@ -612,7 +630,7 @@ reStart:
 		}
 		rList[idx] = line
 	}
-	// rList.Sort() // not needed since the list is read sequentially anyway
+	// rList.Sort() // not needed: list is read sequentially anyway
 
 	return
 } // readListFile()
@@ -817,7 +835,7 @@ func CreateImage(aURL string) (string, error) {
 	)
 
 	//TODO turn `Background()` into calltime argument:
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*time.Duration(ssOptions.MaxProcessTime))
+	ctx, cancel = context.WithTimeout(context.Background(), time.Duration(ssOptions.MaxProcessTime)*time.Second)
 	defer func() {
 		if r := recover(); nil != r {
 			// Timing problems or invalid site data might indirectly
@@ -918,21 +936,22 @@ func SetHostsNeedJS(aFilename string) {
 	ssOptions.HostsNeedJS = setHosts4JS(aFilename, ssHostsNeedJS)
 } // SetHostsNeedJS()
 
-// ImageAge returns the maximum age of locally stored screenshot images.
-func ImageAge() time.Duration {
+// ImageAge returns the maximum age (in hours) of the locally stored
+// screenshot images.
+func ImageAge() int64 {
 	return ssOptions.ImageAge
 } // ImageAge()
 
 // SetImageAge sets the maximum age of locally stored screenshot images
-// before they might get updated by a new call to `CreateImage(…)`.
+// before they may get updated by a new call to `CreateImage(…)`.
 //
 // Usually you'll want this property at its default value (`0`, zero)
 // which disables an age check because usually you want an image of the
 // page at the time you linked to it.
 //
-//	`aMaxAge` is the age a page image can have before
+//	`aMaxAge` is the age (in hours) a page image can have before
 // requesting it again.
-func SetImageAge(aMaxAge time.Duration) {
+func SetImageAge(aMaxAge int64) {
 	if 0 < aMaxAge {
 		ssOptions.ImageAge = aMaxAge
 	} else {
@@ -1154,6 +1173,30 @@ func Platform() string {
 func SetPlatform(aPlatform string) {
 	ssOptions.Platform = aPlatform
 } // SetPlatform()
+
+// ReadWaitTime returns the number of minutes to wait before an Avoid/Need
+// hosts file is re-read.
+func ReadWaitTime() int64 {
+	return ssReadWaitTime
+} // ReadWaitTime()
+
+// SetReadWaitTime sets the number of minutes to wait before an Avoid/Need
+// hosts file is re-read.
+//
+// Usually you'll want this property at its default value (`1`, one)
+// which seems to be a reasonable compromise between batch processing
+// (i.e. looping through a list of URLs to process) and mitigation of
+// disk access.
+//
+//	`aMinutes` is the number of minutes to wait before an Avoid/Need
+// hosts file is re-read.
+func SetReadWaitTime(aMinutes int64) {
+	if 0 < aMinutes {
+		ssReadWaitTime = aMinutes
+	} else {
+		ssReadWaitTime = 0
+	}
+} // SetReadWaitTime()
 
 // Scrollbars returns whether the virtual browser will show scrollbars
 // (if available in web-page).

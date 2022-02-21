@@ -3,7 +3,6 @@
                    All rights reserved
                EMail : <support@mwat.de>
 */
-
 package screenshot
 
 //lint:file-ignore ST1017 - I prefer Yoda conditions
@@ -199,21 +198,21 @@ func Options() (rOptions *ScreenshotParams) {
 // prefer calling the various `SetXxxx()` functions (if there are less
 // than half of the available options to set). Or – if you want to set
 // the majority of the options – you'd provide the options you do not
-// want to change with their already existing default values by calling
-// the respective Getter function of the option in question, like:
+// want to change with their already existing values by calling the
+// respective GETter function of the option in question, like:
 //
 //	myOptions := &ScreenshotParams{
 //		// set fields …
-//		ImageHeight: myHeightValue,
-//		ImageQuality:  myQualityValue,
+//		ImageHeight:  myHeightValue,
+//		ImageQuality: myQualityValue,
 //		// …
 //		// say, you don't want to change the width option
-//		ImageWidth:  screenshot.ImageWidth(),
+//		ImageWidth:   screenshot.ImageWidth(),
 //	}
 //	screenshot.Setup(myOptions)
 //	// continue with your program …
 //
-//	`aOptions` The screenshot options tu use.
+//	`aOptions` The screenshot options to use.
 func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
 	if *aOptions == *ssOptions {
 		return Options() // nothing to change

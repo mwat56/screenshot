@@ -36,14 +36,20 @@ import (
 )
 
 const (
-	// Identifier used in error messages
-	ssLibName = "ScreenShot"
+	// Default `UserAgent` string:
+	ssDefaultAgent = `Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0`
 
-	// Filename of the list of hosts/domains where JS should be avoided
-	ssHostsAvoidJS = "hostsavoidjs.list"
+	// Default `Platform` string:
+	ssDefaultPlatform = `Linux x86_64`
 
-	// Filename of the list of hosts/domains where JS is needed
-	ssHostsNeedJS = "hostsneedjs.list"
+	// Identifier used in error messages:
+	ssLibName = `ScreenShot`
+
+	// Filename of list of hosts/domains where JS should be avoided:
+	ssHostsAvoidJS = `hostsavoidjs.list`
+
+	// Filename of list of hosts/domains where JS is needed:
+	ssHostsNeedJS = `hostsneedjs.list`
 )
 
 // ScreenshotParams bundles all available configuration Options and
@@ -148,9 +154,9 @@ var (
 		JavaScript:     false,
 		MaxProcessTime: 32,
 		Mobile:         false,
-		Platform:       "Linux x86_64",
+		Platform:       ssDefaultPlatform,
 		Scrollbars:     false,
-		UserAgent:      "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0",
+		UserAgent:      ssDefaultAgent,
 	}
 
 	// Number of minutes to wait before re-reading Avoid/Need hosts files:
@@ -312,7 +318,9 @@ func chk4(aURL, aHostsFilename string) bool {
 	}
 
 	if (0 == hosts.list.Len()) || time.Now().After(hosts.nextTime) {
-		hosts.nextTime = time.Now().Add(time.Duration(ssReadWaitTime) * time.Minute)
+		if 0 < ssReadWaitTime {
+			hosts.nextTime = time.Now().Add(time.Duration(ssReadWaitTime) * time.Minute)
+		}
 		if hosts.list = readListFile(aHostsFilename); 0 == hosts.list.Len() {
 			return false
 		}
@@ -1157,20 +1165,25 @@ func PathFile(aURL string) string {
 		sanitise(aURL)+`.`+ssImageTypes[100 > ssOptions.ImageQuality])
 } // PathFile()
 
-// Platform returns the platform `navigator.platform` should return.
+// Platform returns the text the JS `navigator.platform` should return.
 //
 // NOTE: This value is used only if the `JavaScript()` option is set `true`.
 func Platform() string {
 	return ssOptions.Platform
 } // Platform()
 
-// SetPlatform sets the platform `navigator.platform` should return.
+// SetPlatform sets the text the JS `navigator.platform` should return.
 //
 // NOTE: This value is used only if the `JavaScript()` option is set `true`.
 //
 //	`aPlatform` The platform identifier to use for `navigator.platform`.
 func SetPlatform(aPlatform string) {
-	ssOptions.Platform = aPlatform
+	aPlatform = strings.TrimSpace(aPlatform)
+	if 0 < len(aPlatform) {
+		ssOptions.Platform = aPlatform
+	} else {
+		ssOptions.Platform = ssDefaultPlatform
+	}
 } // SetPlatform()
 
 // ReadWaitTime returns the number of minutes to wait before an Avoid/Need
@@ -1228,7 +1241,7 @@ func SetUserAgent(aAgent string) {
 	if 0 < len(aAgent) {
 		ssOptions.UserAgent = aAgent
 	} else {
-		ssOptions.UserAgent = ""
+		ssOptions.UserAgent = ssDefaultAgent
 	}
 } // SetUserAgent()
 

@@ -63,10 +63,10 @@ func processOptions() (rURL string, rVerbose bool) {
 	// --- JavaScript related settings:
 
 	flag.StringVar(&opts.HostsAvoidJS, `ja`, opts.HostsAvoidJS,
-		"name of text-file that contains sites better avoiding JavaScript")
+		"name of text-file that contains sites better avoiding JavaScript\n")
 
 	flag.StringVar(&opts.HostsNeedJS, `jn`, opts.HostsNeedJS,
-		"name of text-file that contains sites needing JavaScript")
+		"name of text-file that contains sites needing JavaScript\n")
 
 	flag.StringVar(&opts.Platform, `jp`, opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
@@ -75,7 +75,7 @@ func processOptions() (rURL string, rVerbose bool) {
 	flag.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
 
 	flag.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,
-		`description of the UserAgent the browser should report`)
+		"description of the UserAgent the browser should report\n")
 
 	// --- general options:
 
@@ -101,6 +101,7 @@ func processOptions() (rURL string, rVerbose bool) {
 func showHelp() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS]\n\n", os.Args[0])
 	flag.PrintDefaults()
+	fmt.Println()
 } // showHelp()
 
 // `exit()` does _not_ return but terminates the program.
@@ -110,9 +111,9 @@ func showHelp() {
 //	`isVerbose` Flag whether to show the configured screenshot options.
 //	`aCode` The program's exit code.
 func exit(aText string, aHelp, isVerbose bool, aCode int) {
-	fmt.Print("\n", aText, "\n")
+	fmt.Print("\n", aText, "\n\n")
 	if isVerbose {
-		fmt.Println("\n", screenshot.String())
+		fmt.Println(screenshot.String())
 		showHelp()
 	} else if aHelp {
 		showHelp()

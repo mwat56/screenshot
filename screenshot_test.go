@@ -6,8 +6,6 @@
 
 package screenshot
 
-//lint:file-ignore ST1017 - I prefer Yoda conditions
-
 import (
 	"context"
 	"io/fs"
@@ -137,6 +135,35 @@ func Test_containsHost(t *testing.T) {
 		})
 	}
 } // Test_containsHost()
+
+func Test_exists(t *testing.T) {
+	f1 := `/ is not there`   // root dir is not writeable
+	f2 := ``                 // invalid (empty) filename
+	f3 := `/home`            // is directory, i.e. irregular
+	f4 := `/etc/cron.d/`     // (dito)
+	f5 := `/etc/crontab`     // exists but too small
+	f6 := `/etc/ld.so.cache` // exists and big enough
+	tests := []struct {
+		name      string
+		aFilename string
+		want      bool
+	}{
+		// TODO: Add test cases.
+		{" 1", f1, false},
+		{" 2", f2, false},
+		{" 3", f3, true},
+		{" 4", f4, true},
+		{" 5", f5, false},
+		{" 6", f6, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := exists(tt.aFilename); got != tt.want {
+				t.Errorf("exists() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+} // Test_exists()
 
 func Test_fileExt(t *testing.T) {
 	type args struct {

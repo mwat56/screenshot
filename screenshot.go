@@ -512,36 +512,43 @@ func crop(aImgData image.Image) image.Image {
 	return aImgData // unmodified image
 } // crop()
 
-// `exists()` returns whether there is an usable image file cached.
+// `exists()` returns whether there's an image file already existing.
 //
 // This function uses the `ImageAge()` value to determine whether
 // an already existing local file is considered to be too old.
 //
 // Files empty or smaller than 10KB are ignored.
 func exists(aFilename string) bool {
-	if 0 == ssOptions.ImageAge {
-		// shortcut: no checks at all …
+	if aFilename = strings.TrimSpace(aFilename); 0 == len(aFilename) {
 		return false
 	}
 
 	fi, err := os.Stat(aFilename)
-	if (nil != err) || fi.IsDir() {
+	if nil != err {
 		return false
+	}
+	if !fi.Mode().IsRegular() {
+		// We can't do anything about that – hence we leave
+		// the existing irregular file alone.
+		return true
 	}
 
 	if 8192 > fi.Size() {
 		// Empty and small (i.e. `<8KB`) files are ignored.
-		// File sizes smaller than ~10KB indicate some kind of
-		// error during retrieval of the web page or rendering it.
+		// File sizes smaller than ~8KB indicate some kind of error
+		// during retrieval of the web page or rendering it.
 		// Valid preview images take approximately between 10 to
-		// 100 KB depending on the respective web page (e.g. number
+		// 300KB depending on the respective web page (e.g. number
 		// and size of embedded images).
 		return false
 	}
 
-	maxTime := fi.ModTime().Add(time.Duration(ssOptions.ImageAge) * time.Hour)
-	// files too old are ignored
-	return time.Now().Before(maxTime)
+	if 0 < ssOptions.ImageAge {
+		maxTime := fi.ModTime().Add(time.Duration(ssOptions.ImageAge) * time.Hour)
+		return time.Now().Before(maxTime)
+	}
+
+	return true
 } // exists()
 
 // `fileExt()` returns the filename extension of `aURL`.

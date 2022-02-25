@@ -26,14 +26,15 @@ const (
 )
 
 func setupScreenshot() {
-	SetImageAge(0)
+	SetAcceptOther(true)
 	SetCookies(false)
+	SetImageAge(0)
 	SetImageDir(testImgDirectory)
 	SetImageHeight(768)
 	SetImageQuality(75)
+	SetImageScale(0.99)
 	SetImageWidth(896)
 	SetJavaScript(false)
-	SetImageScale(0.99)
 	SetMaxProcessTime(24)
 	SetScrollbars(true)
 	SetUserAgent(agentFirefox)
@@ -628,7 +629,8 @@ func TestSetup(t *testing.T) {
 
 func TestString(t *testing.T) {
 	setupScreenshot()
-	w1 := `CertErrors:	false
+	w1 := `AcceptOther:	true
+CertErrors:	false
 Cookies:	false
 HostsAvoidJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsavoidjs.list'
 HostsNeedJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsneedjs.list'

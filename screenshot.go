@@ -56,6 +56,9 @@ const (
 // pass them to the `Setup()` function in a single call.
 type (
 	ScreenshotParams struct {
+		// Flag whether to accept the respective other image format
+		AcceptOther bool
+
 		// Flag whether certificate errors should be ignored.
 		CertErrors bool
 
@@ -129,6 +132,7 @@ var (
 	ssExtRE = regexp.MustCompile(`(\.\w+)([\?\#].*)?$`)
 
 	// Internal lookup table for image type and filename extension.
+	// Use like `fileExt := ssImageTypes[100 >ssOptions.ImageQuality]`
 	ssImageTypes = map[bool]string{
 		false: `png`,
 		true:  `jpeg`,
@@ -141,6 +145,7 @@ var (
 
 	// The initially used screenshot options:
 	ssOptions *ScreenshotParams = &ScreenshotParams{
+		AcceptOther:    true,
 		CertErrors:     false,
 		Cookies:        false,
 		HostsAvoidJS:   setHosts4JS("./", ssHostsAvoidJS),
@@ -169,6 +174,7 @@ var (
 // Options returns the currently configured screenshot options.
 func Options() (rOptions *ScreenshotParams) {
 	rOptions = &ScreenshotParams{
+		AcceptOther:    ssOptions.AcceptOther,
 		CertErrors:     ssOptions.CertErrors,
 		Cookies:        ssOptions.Cookies,
 		HostsAvoidJS:   ssOptions.HostsAvoidJS,
@@ -224,6 +230,7 @@ func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
 		return Options() // nothing to change
 	}
 
+	ssOptions.AcceptOther = aOptions.AcceptOther
 	ssOptions.CertErrors = aOptions.CertErrors
 	ssOptions.Cookies = aOptions.Cookies
 	SetHostsAvoidJS(aOptions.HostsAvoidJS)
@@ -255,6 +262,7 @@ func String() string {
 	)
 	var sb strings.Builder
 
+	sb.WriteString(fmt.Sprintf(fmtBoo, "AcceptOther", ssOptions.AcceptOther))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "CertErrors", ssOptions.CertErrors))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Cookies", ssOptions.Cookies))
 	sb.WriteString(fmt.Sprintf(fmtStr, "HostsAvoidJS", ssOptions.HostsAvoidJS))
@@ -533,12 +541,12 @@ func exists(aFilename string) bool {
 		return true
 	}
 
-	if 8192 > fi.Size() {
-		// Empty and small (i.e. `<8KB`) files are ignored.
-		// File sizes smaller than ~8KB indicate some kind of error
+	if 10240 > fi.Size() {
+		// Empty and small (i.e. `<10KB`) files are ignored.
+		// File sizes smaller than ~10KB indicate some kind of error
 		// during retrieval of the web page or rendering it.
-		// Valid preview images take approximately between 10 to
-		// 300KB depending on the respective web page (e.g. number
+		// Valid preview images take approximately between 10 up to
+		// ~1MB depending on the respective web page (e.g. number
 		// and size of embedded images).
 		return false
 	}
@@ -789,6 +797,35 @@ func writeFile(aFilename string, aData []byte, aResponse *http.Response) (rErr e
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                           public functions                              */
 
+// AcceptOther returns whether to respect the respective other image format.
+//
+// (See comments to the `SetAcceptOther()` function.)
+func AcceptOther() bool {
+	return ssOptions.AcceptOther
+} // AcceptOther()
+
+// AcceptOther returns whether to respect the respective other image format.
+//
+// The `CreateImage()` function checks whether a screenshot image already
+// exists and if so doesn't create a new one.
+// The filename extension (and it's image format) is determined by the
+// `ImageQuality()` setting: if `100` it will be `png`, if less then `100`
+// (like the default value of `75`) it will be `jpeg`.
+// Now, assume current `ImageType()` is configured `png` and `CreateImage()`
+// is called: To check whether there's already a screenshot present it
+// looks for the appropriate image file with a `png` extension.
+// If it exists no further work is done.
+// However, if `AcceptOther()` is true (i.e. the default) the other
+// `ImageType()` (`jpeg` in this example) is checked as well, and if that
+// file exists no further work is done and `CreateImage()` will return
+// the already existing filename.
+//
+//	`doUse` If `true` (i.e. the default) an existing screenshot image
+// of the "other" format will satisfy.
+func SetAcceptOther(doUse bool) {
+	ssOptions.AcceptOther = doUse
+} // SetAcceptOther()
+
 // CertErrors returns whether to skip sites with Certificate errors;
 // defaults to `false` for historic reasons.
 func CertErrors() bool {
@@ -797,10 +834,10 @@ func CertErrors() bool {
 
 // SetCertErrors determines whether to skip sites with certificate errors.
 //
-//	`anAllow` If `false` (i.e. the default) all web-sites will be processed
+//	`doAllow` If `false` (i.e. the default) all web-sites will be processed
 // regardless of certificate errors.
-func SetCertErrors(anAllow bool) {
-	ssOptions.CertErrors = anAllow
+func SetCertErrors(doAllow bool) {
+	ssOptions.CertErrors = doAllow
 } // SetCertErrors()
 
 // Cookies returns whether to allow web cookies during page retrieval;
@@ -814,27 +851,48 @@ func Cookies() bool {
 //
 //	`anAllow` If `false` (i.e. the default) no cookies will be available
 // during page retrieval, otherwise (i.e. `true`) they will be used.
-func SetCookies(anAllow bool) {
-	ssOptions.Cookies = anAllow
+func SetCookies(doAllow bool) {
+	ssOptions.Cookies = doAllow
 } // SetCookies()
 
 // CreateImage generates an image of `aURL` and stores it in `ImageDir()`,
 // returning the file name of the saved image or an error in case of problems.
 //
+// In case the `ImageAge()` or `AcceptOther()` properties determine that
+// the requested screenshot image already exists this function does not in
+// fact create another screenshot but returns that existing filename.
+// See also the comments to the `SetAcceptOther()` function.
+//
 //	`aURL` The address of the web page to process.
 func CreateImage(aURL string) (string, error) {
-	//TODO add 'context' argument
-
 	if 0 == len(ssOptions.ImageDir) {
 		return "", errors.New(ssLibName + ": property 'ImageDir' is empty")
 	}
 
-	result := sanitise(aURL) + `.` + ssImageTypes[100 > ssOptions.ImageQuality]
+	ext := ssImageTypes[100 > ssOptions.ImageQuality]
+	sanitised := sanitise(aURL)
+	result := sanitised + `.` + ext
 	fName := filepath.Join(ssOptions.ImageDir, result)
 	// Check whether we've already got an image file
 	// so we might avoid additional network traffic:
 	if exists(fName) {
 		return result, nil
+	}
+
+	if ssOptions.AcceptOther {
+		switch ext {
+		case `jpeg`:
+			result2 := sanitised + `.png`
+			if fName2 := filepath.Join(ssOptions.ImageDir, result2); exists(fName2) {
+				return result2, nil
+			}
+
+		case `png`:
+			result2 := sanitised + `.jpeg`
+			if fName2 := filepath.Join(ssOptions.ImageDir, result2); exists(fName2) {
+				return result2, nil
+			}
+		}
 	}
 
 	var (
@@ -843,12 +901,10 @@ func CreateImage(aURL string) (string, error) {
 		cancel    context.CancelFunc
 		ctx       context.Context
 		err       error
-		ext       string
 		imageData []byte
 		response  *http.Response
 	)
 
-	//TODO turn `Background()` into calltime argument:
 	ctx, cancel = context.WithTimeout(context.Background(), time.Duration(ssOptions.MaxProcessTime)*time.Second)
 	defer func() {
 		if r := recover(); nil != r {
@@ -882,7 +938,7 @@ func CreateImage(aURL string) (string, error) {
 			return "", err
 		}
 		defer response.Body.Close()
-		result = sanitise(aURL) + ext
+		result = sanitised + ext
 		fName = filepath.Join(ssOptions.ImageDir, result)
 
 	default:
@@ -894,7 +950,7 @@ func CreateImage(aURL string) (string, error) {
 		case <-ctx.Done():
 			return "", ctx.Err() // Canceled? TimeOut?
 		default:
-			break
+			break // still within our allocated time frame
 		}
 	}
 
@@ -1022,7 +1078,7 @@ func ImageHeight() int {
 // `Chrome` instance the generated image's height could be less.
 //
 // Setting this value to `0` will result in an image containing the
-// whole web-page (which might be quite lang); so the actual height
+// whole web-page (which might be quite long); so the actual height
 // of the generated screenshot would be unpredictable.
 //
 //	`aHeight` The new height of the images to generate.
@@ -1077,8 +1133,8 @@ func SetImageScale(aFactor float64) {
 // `quality < 100` results in a `jpeg` image.
 //
 // If the URL to shoot points to an image file
-// (".gif", ".jpeg", ".jpg", ".png", ".svg")
-// the result of this function might be wrong because the actually
+// (i.e. ".gif", ".jpeg", ".jpg", ".png", ".svg")
+// the result of this function might be _wrong_ because the actually
 // generated image depends on the type of the requested image.
 func ImageType() string {
 	return ssImageTypes[100 > ssOptions.ImageQuality]
@@ -1135,7 +1191,7 @@ func MaxProcessTime() int64 {
 // a requested web page.
 //
 // NOTE: A wrong (i.e. negative) value and `0` (zero) resets the
-// timeout value to its default od 32 seconds.
+// timeout value to its default of 32 seconds.
 //
 //	`aProcessTime` The new max. seconds allowed to process a web page.
 func SetMaxProcessTime(aProcessTime int64) {
@@ -1152,19 +1208,21 @@ func Mobile() bool {
 	return ssOptions.Mobile
 } // Mobile()
 
-// SetMobile set whether to emulate mobile device.
+// SetMobile sets whether to emulate mobile device.
 // This includes viewport meta tag, overlay scrollbars, text
 // autosizing and more.
 //
-//	`aForceMobile`
-func SetMobile(aForceMobile bool) {
-	ssOptions.Mobile = aForceMobile
-} // setMobile()
+//	`aMobile` Whether the virtual browser should emulate a mobile
+// device.
+func SetMobile(aMobile bool) {
+	ssOptions.Mobile = aMobile
+} // SetMobile()
 
 // PathFile returns the complete local path/file of `aURL`.
 //
 // NOTE: This function does not check whether the file for `aURL`
-// actually exists in the local filesystem.
+// actually exists in the local filesystem but just reports the default
+// path-/filename computed by string operations.
 //
 //	`aURL` The address of the web page to process.
 func PathFile(aURL string) string {
@@ -1205,7 +1263,9 @@ func ReadWaitTime() int64 {
 // Usually you'll want this property at its default value (`1`, one)
 // which seems to be a reasonable compromise between batch processing
 // (i.e. looping through a list of URLs to process) and mitigation of
-// disk access.
+// disk accesses.
+// An invalid (i.e. negative) value and `0` (zero) resets this property
+// to its default of `1` (one) minute.
 //
 //	`aMinutes` is the number of minutes to wait before an Avoid/Need
 // hosts file is re-read.
@@ -1213,7 +1273,7 @@ func SetReadWaitTime(aMinutes int64) {
 	if 0 < aMinutes {
 		ssReadWaitTime = aMinutes
 	} else {
-		ssReadWaitTime = 0
+		ssReadWaitTime = 1
 	}
 } // SetReadWaitTime()
 
@@ -1225,6 +1285,9 @@ func Scrollbars() bool {
 
 // SetScrollbars sets whether the virtual browser will show scrollbars
 // (if available in web-page).
+//
+// NOTE: This feature is currently considered EXPERIMENTAL and might
+// not work as expected.
 //
 //	`aScrollbar` Flag whether to show scrollbars (if available).
 func SetScrollbars(aScrollbar bool) {
@@ -1242,10 +1305,12 @@ func UserAgent() string {
 //
 // NOTE: This value is used only if the `JavaScript()` option is set `true`.
 //
+// An invalid (empty) value resets this property to its current default of
+// `Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0`.
+//
 //	`aAgent` The new `User Agent` setting.
 func SetUserAgent(aAgent string) {
-	aAgent = strings.TrimSpace(aAgent)
-	if 0 < len(aAgent) {
+	if aAgent = strings.TrimSpace(aAgent); 0 < len(aAgent) {
 		ssOptions.UserAgent = aAgent
 	} else {
 		ssOptions.UserAgent = ssDefaultAgent

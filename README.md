@@ -92,15 +92,17 @@ It will show you all available commandline options e.g.:
 	Usage: ./screenshot [OPTIONS]
 
 	-bc
-		allow the browser to handle web cookies (default "false")
+		allow the browser to handle web cookies (default false)
 	-be
-		skip sites with Certificate errors (default "false")
+		skip sites with Certificate errors (default false)
 	-bm
-		let browser emulate a mobile device (default "false")
+		let browser emulate a mobile device (default false)
 	-bs
-		let browser show scrollbars if available (default "false")
+		let browser show scrollbars if available (default false)
 	-bt int
 		max. time (seconds) allowed to process a single web page (default 32)
+	-ia
+		accept the respective other image format (default true)
 	-id string
 		directory for storing the screenshot image (default "/tmp")
 	-ih int
@@ -112,18 +114,21 @@ It will show you all available commandline options e.g.:
 	-iw int
 		max. width of the screenshot image (default 896)
 	-ja string
-		name of text-file that contains sites better avoiding JavaScript (default "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/app/hostsavoidjs.list")
+		name of text-file that contains sites better avoiding JavaScript
+		(default "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/app/hostsavoidjs.list")
 	-jn string
-		name of text-file that contains sites needing JavaScript (default "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/app/hostsneedjs.list")
+		name of text-file that contains sites needing JavaScript
+		(default "/home/matthias/devel/Go/src/github.com/mwat56/screenshot/app/hostsneedjs.list")
 	-jp navigator.platform
 		Identifier the JavaScript navigator.platform should use (default "Linux x86_64")
 	-js
-		allow browser's use of JavaScript (default "false")
+		allow browser's use of JavaScript (default false)
 	-ju string
-		description of the UserAgent the browser should report (default "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0")
+		description of the UserAgent the browser should report
+		(default "Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0")
 	-u string
-		(_required_) the URL for the browser's screenshot (default "")
-	-v	verbose (default "false")
+		(*required*) the URL for the browser's screenshot
+	-v	verbose (default false)
 
 As noted before you'll only need the `-u string` option, obviously.
 
@@ -131,8 +136,8 @@ You can use this program to generate screenshot images "by hand" and fiddle with
 
 ## History
 
-Prior to [this](https://godoc.org/github.com/mwat56/screenshot) a few years back I wrote the [pageview](https://github.com/mwat56/pageview/) package which used the external [wkhtmltoimage](https://wkhtmltopdf.org/downloads.html) program; and in most cases it worked just fine. However, once in a while `wkhtmltoimage` produced a `segmentation fault (core dumped)` – reproducible. For a while I thought I could live with it, but over time it happened more often (i.e. with additional URLs). Fiddling around with various commandline options provided no improvement.
-In the end I started to look around, searching for alternative approaches – short of writing my own URL retrieval and rendering system. That's when I found [ChromeDP](https://github.com/chromedp/chromedp) and hence this [package](https://godoc.org/github.com/mwat56/screenshot).
+Prior to this a few years back I wrote the [pageview](https://github.com/mwat56/pageview/) package which used the external [wkhtmltoimage](https://wkhtmltopdf.org/downloads.html) program; and in most cases it worked just fine. However, once in a while `wkhtmltoimage` produced a `segmentation fault (core dumped)` – reproducible. For a while I thought I could live with it, but over time it happened more often (i.e. with additional URLs). Fiddling around with various commandline options provided no improvement.
+In the end I started to look around, searching for alternative approaches – short of writing my own URL retrieval and rendering system. That's when I found [ChromeDP](https://github.com/chromedp/chromedp) and hence this [package](https://godoc.org/github.com/mwat56/screenshot) came into existence.
 
 ## Licence
 

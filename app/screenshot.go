@@ -28,22 +28,25 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- browser related settings:
 
-	s := fmt.Sprintf(`allow the browser to handle web cookies (default "%v")`, opts.Cookies)
+	s := fmt.Sprintf(`allow the browser to handle web cookies (default %v)`, opts.Cookies)
 	flag.BoolVar(&opts.Cookies, `bc`, opts.Cookies, s)
 
-	s = fmt.Sprintf(`skip sites with Certificate errors (default "%v")`, opts.CertErrors)
+	s = fmt.Sprintf(`skip sites with Certificate errors (default %v)`, opts.CertErrors)
 	flag.BoolVar(&opts.CertErrors, `be`, opts.CertErrors, s)
 
-	s = fmt.Sprintf(`let browser emulate a mobile device (default "%v")`, opts.Mobile)
+	s = fmt.Sprintf(`let browser emulate a mobile device (default %v)`, opts.Mobile)
 	flag.BoolVar(&opts.Mobile, `bm`, opts.Mobile, s)
 
-	s = fmt.Sprintf(`let browser show scrollbars if available (default "%v")`, opts.Scrollbars)
+	s = fmt.Sprintf(`let browser show scrollbars if available (default %v)`, opts.Scrollbars)
 	flag.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
 
 	flag.Int64Var(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
 		"max. time (seconds) allowed to process a single web page")
 
 	// --- image related settings:
+
+	flag.BoolVar(&opts.AcceptOther, `ia`, opts.AcceptOther,
+		"accept the respective other image format")
 
 	flag.StringVar(&opts.ImageDir, `id`, opts.ImageDir,
 		"directory for storing the screenshot image")
@@ -71,7 +74,7 @@ func processOptions() (rURL string, rVerbose bool) {
 	flag.StringVar(&opts.Platform, `jp`, opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
 
-	s = fmt.Sprintf(`allow browser's use of JavaScript (default "%v")`, opts.JavaScript)
+	s = fmt.Sprintf(`allow browser's use of JavaScript (default %v)`, opts.JavaScript)
 	flag.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
 
 	flag.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,
@@ -79,10 +82,10 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- general options:
 
-	s = fmt.Sprintf(`(*required*) the URL for the browser's screenshot (default "%v")`, rURL)
-	flag.StringVar(&rURL, `u`, rURL, s)
+	flag.StringVar(&rURL, `u`, rURL,
+		"(*required*) the URL for the browser's screenshot")
 
-	s = fmt.Sprintf(`verbose (default "%v")`, rVerbose)
+	s = fmt.Sprintf(`verbose (default %v)`, rVerbose)
 	flag.BoolVar(&rVerbose, `v`, rVerbose, s)
 
 	// --- process the commandline:

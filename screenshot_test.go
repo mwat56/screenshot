@@ -51,15 +51,15 @@ func Test_chk4(t *testing.T) {
 	u1 := ""
 	w1 := false
 	//
-	h2 := ssHostsAvoidJS
+	h2 := HostsAvoidJS
 	u2 := ""
 	w2 := false
 	//
-	h3 := ssHostsNeedJS
+	h3 := HostsNeedJS
 	u3 := "Twitter.Com"
 	w3 := true
 	//
-	h4 := ssHostsNeedJS
+	h4 := HostsNeedJS
 	u4 := "https://you.tube.me/"
 	w4 := false
 	//
@@ -590,11 +590,11 @@ func testSetHosts4JS(t *testing.T, aNameConstant string) {
 } // Test_setHosts4JS()
 
 func TestSetAvoidJS(t *testing.T) {
-	testSetHosts4JS(t, ssHostsAvoidJS)
+	testSetHosts4JS(t, HostsAvoidJS)
 } // TestSetHostsAvoidJS()
 
 func TestSetHostsNeedJS(t *testing.T) {
-	testSetHosts4JS(t, ssHostsNeedJS)
+	testSetHosts4JS(t, HostsNeedJS)
 } // TestSetHostsNeedJS()
 
 func TestSetup(t *testing.T) {

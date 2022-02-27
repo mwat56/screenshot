@@ -37,19 +37,19 @@ import (
 
 const (
 	// Default `UserAgent` string:
-	ssDefaultAgent = `Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0`
+	DefaultAgent = `Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0`
 
-	// Default `Platform` string:
-	ssDefaultPlatform = `Linux x86_64`
+	// Default `Platform` string to use ba JavaScript:
+	DefaultPlatform = `Linux x86_64`
+
+	// Filename of list of hosts/domains where JS should be avoided:
+	HostsAvoidJS = `hostsavoidjs.list`
+
+	// Filename of list of hosts/domains where JS is needed:
+	HostsNeedJS = `hostsneedjs.list`
 
 	// Identifier used in error messages:
 	ssLibName = `ScreenShot`
-
-	// Filename of list of hosts/domains where JS should be avoided:
-	ssHostsAvoidJS = `hostsavoidjs.list`
-
-	// Filename of list of hosts/domains where JS is needed:
-	ssHostsNeedJS = `hostsneedjs.list`
 )
 
 // ScreenshotParams bundles all available configuration Options and
@@ -67,11 +67,11 @@ type (
 
 		// Path/filename of a list of web hosts/domains where JavaScript
 		// running should be avoided (defaults to a file in user's homedir).
-		HostsAvoidJS string
+		HostsAvoidJSfile string
 
 		// Path/filename of a list of web hosts/domains where JavaScript
 		// is required to work (defaults to a file in user's homedir).
-		HostsNeedJS string
+		HostsNeedJSfile string
 
 		// Max. age of cached page screenshot images (in hours).
 		ImageAge int64
@@ -148,24 +148,24 @@ var (
 
 	// The initially used screenshot options:
 	ssOptions *ScreenshotParams = &ScreenshotParams{
-		AcceptOther:    true,
-		CertErrors:     false,
-		Cookies:        false,
-		HostsAvoidJS:   setHosts4JS("./", ssHostsAvoidJS),
-		HostsNeedJS:    setHosts4JS("./", ssHostsNeedJS),
-		ImageAge:       0,
-		ImageDir:       os.TempDir(),
-		ImageHeight:    768,
-		ImageQuality:   75,
-		ImageScale:     0,
-		ImageWidth:     896,
-		JavaScript:     false,
-		MaxProcessTime: 32,
-		Mobile:         false,
-		ImageOverwrite: false, //FIXME opposite default??
-		Platform:       ssDefaultPlatform,
-		Scrollbars:     false,
-		UserAgent:      ssDefaultAgent,
+		AcceptOther:      true,
+		CertErrors:       false,
+		Cookies:          false,
+		HostsAvoidJSfile: setHosts4JS("./", HostsAvoidJS),
+		HostsNeedJSfile:  setHosts4JS("./", HostsNeedJS),
+		ImageAge:         0,
+		ImageDir:         os.TempDir(),
+		ImageHeight:      768,
+		ImageOverwrite:   false,
+		ImageQuality:     75,
+		ImageScale:       0,
+		ImageWidth:       896,
+		JavaScript:       false,
+		MaxProcessTime:   32,
+		Mobile:           false,
+		Platform:         DefaultPlatform,
+		Scrollbars:       false,
+		UserAgent:        DefaultAgent,
 	}
 
 	// Number of minutes to wait before re-reading Avoid/Need hosts files:
@@ -178,24 +178,24 @@ var (
 // Options returns the currently configured screenshot options.
 func Options() (rOptions *ScreenshotParams) {
 	rOptions = &ScreenshotParams{
-		AcceptOther:    ssOptions.AcceptOther,
-		CertErrors:     ssOptions.CertErrors,
-		Cookies:        ssOptions.Cookies,
-		HostsAvoidJS:   ssOptions.HostsAvoidJS,
-		HostsNeedJS:    ssOptions.HostsNeedJS,
-		ImageAge:       ssOptions.ImageAge,
-		ImageDir:       ssOptions.ImageDir,
-		ImageHeight:    ssOptions.ImageHeight,
-		ImageQuality:   ssOptions.ImageQuality,
-		ImageScale:     ssOptions.ImageScale,
-		ImageWidth:     ssOptions.ImageWidth,
-		JavaScript:     ssOptions.JavaScript,
-		MaxProcessTime: ssOptions.MaxProcessTime,
-		Mobile:         ssOptions.Mobile,
-		ImageOverwrite: ssOptions.ImageOverwrite,
-		Platform:       ssOptions.Platform,
-		Scrollbars:     ssOptions.Scrollbars,
-		UserAgent:      ssOptions.UserAgent,
+		AcceptOther:      ssOptions.AcceptOther,
+		CertErrors:       ssOptions.CertErrors,
+		Cookies:          ssOptions.Cookies,
+		HostsAvoidJSfile: ssOptions.HostsAvoidJSfile,
+		HostsNeedJSfile:  ssOptions.HostsNeedJSfile,
+		ImageAge:         ssOptions.ImageAge,
+		ImageDir:         ssOptions.ImageDir,
+		ImageHeight:      ssOptions.ImageHeight,
+		ImageOverwrite:   ssOptions.ImageOverwrite,
+		ImageQuality:     ssOptions.ImageQuality,
+		ImageScale:       ssOptions.ImageScale,
+		ImageWidth:       ssOptions.ImageWidth,
+		JavaScript:       ssOptions.JavaScript,
+		MaxProcessTime:   ssOptions.MaxProcessTime,
+		Mobile:           ssOptions.Mobile,
+		Platform:         ssOptions.Platform,
+		Scrollbars:       ssOptions.Scrollbars,
+		UserAgent:        ssOptions.UserAgent,
 	}
 
 	return
@@ -238,8 +238,8 @@ func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
 	ssOptions.AcceptOther = aOptions.AcceptOther
 	ssOptions.CertErrors = aOptions.CertErrors
 	ssOptions.Cookies = aOptions.Cookies
-	SetHostsAvoidJS(aOptions.HostsAvoidJS)
-	SetHostsNeedJS(aOptions.HostsNeedJS)
+	SetAvoidJSfile(aOptions.HostsAvoidJSfile)
+	SetNeedJSfile(aOptions.HostsNeedJSfile)
 	SetImageAge(aOptions.ImageAge)
 	SetImageDir(aOptions.ImageDir)
 	SetImageHeight(aOptions.ImageHeight)
@@ -271,8 +271,8 @@ func String() string {
 	sb.WriteString(fmt.Sprintf(fmtBoo, "AcceptOther", ssOptions.AcceptOther))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "CertErrors", ssOptions.CertErrors))
 	sb.WriteString(fmt.Sprintf(fmtBoo, "Cookies", ssOptions.Cookies))
-	sb.WriteString(fmt.Sprintf(fmtStr, "HostsAvoidJS", ssOptions.HostsAvoidJS))
-	sb.WriteString(fmt.Sprintf(fmtStr, "HostsNeedJS", ssOptions.HostsNeedJS))
+	sb.WriteString(fmt.Sprintf(fmtStr, "HostsAvoidJS", ssOptions.HostsAvoidJSfile))
+	sb.WriteString(fmt.Sprintf(fmtStr, "HostsNeedJS", ssOptions.HostsNeedJSfile))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageAge", ssOptions.ImageAge))
 	sb.WriteString(fmt.Sprintf(fmtStr, "ImageDir", ssOptions.ImageDir))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageHeight", ssOptions.ImageHeight))
@@ -313,9 +313,9 @@ func chk4(aURL, aHostsFilename string) bool {
 	if (0 == len(aHostsFilename)) || (0 == len(aURL)) {
 		return false
 	}
-	if strings.HasSuffix(aHostsFilename, ssHostsAvoidJS) {
+	if strings.HasSuffix(aHostsFilename, HostsAvoidJS) {
 		hosts = &ssAvoidJSsites
-	} else if strings.HasSuffix(aHostsFilename, ssHostsNeedJS) {
+	} else if strings.HasSuffix(aHostsFilename, HostsNeedJS) {
 		hosts = &ssNeedJSsites
 	} else {
 		return false // unrecognised filename
@@ -398,11 +398,11 @@ func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 	if enableJS {
 		// If the domain is found in the 'avoid' list then we
 		// do NOT want to activate JS here:
-		enableJS = !chk4(aURL, ssOptions.HostsAvoidJS)
+		enableJS = !chk4(aURL, ssOptions.HostsAvoidJSfile)
 	} else {
 		// If the domain is found in the 'need' list then we DO
 		// want to activate JS here:
-		enableJS = chk4(aURL, ssOptions.HostsNeedJS)
+		enableJS = chk4(aURL, ssOptions.HostsNeedJSfile)
 	}
 	waitDuration := time.Second << 1 // two seconds
 	if enableJS {
@@ -855,6 +855,25 @@ func SetAcceptOther(doUse bool) {
 	ssOptions.AcceptOther = doUse
 } // SetAcceptOther()
 
+// AvoidJSfile returns the name of the path/file containing
+// hosts/domains where to avoid running JavaScript.
+//
+// NOTE: This value is used only if the `JavaScript()` property is `true`.
+func AvoidJSfile() string {
+	return ssOptions.HostsAvoidJSfile
+} // AvoidJSfile()
+
+// SetAvoidJSfile configures the name of the file containing
+// hosts/domains where to avoid running JavaScript.
+//
+// NOTE: This value is used only if the `JavaScript()` property is `true`.
+// An invalid filename disables the feature.
+//
+//	`aFilename` The path/filename of sites with JavaScript to avoid.
+func SetAvoidJSfile(aFilename string) {
+	ssOptions.HostsAvoidJSfile = setHosts4JS(aFilename, HostsAvoidJS)
+} // SetHostsAvoidJS()
+
 // CertErrors returns whether to skip sites with Certificate errors;
 // defaults to `false` for historic reasons.
 func CertErrors() bool {
@@ -996,44 +1015,6 @@ func CreateImage(aURL string) (string, error) {
 	// Everything went well it seems …
 	return result, nil
 } // CreateImage()
-
-// HostsAvoidJS returns the name of the path/file containing
-// hosts/domains where to avoid running JavaScript.
-//
-// NOTE: This value is used only if the `JavaScript()` property is `true`.
-func HostsAvoidJS() string {
-	return ssOptions.HostsAvoidJS
-} // HostsAvoidJS()
-
-// SetHostsAvoidJS configures the name of the file containing
-// hosts/domains where to avoid running JavaScript.
-//
-// NOTE: This value is used only if the `JavaScript()` property is `true`.
-// An invalid filename disables the feature.
-//
-//	`aFilename` The path/filename of sites with JavaScript to avoid.
-func SetHostsAvoidJS(aFilename string) {
-	ssOptions.HostsAvoidJS = setHosts4JS(aFilename, ssHostsAvoidJS)
-} // SetHostsAvoidJS()
-
-// HostsNeedJS returns the name of the path/file containing
-// hosts/domains requiring JavaScript to be active/working.
-//
-// NOTE: This value is used only if the `JavaScript()` option is set `false`.
-func HostsNeedJS() string {
-	return ssOptions.HostsNeedJS
-} // HostsNeedJS()
-
-// SetHostsNeedJS configures the name of the file containing
-// hosts/domains requiring JavaScript to be active/working.
-//
-// NOTE: This value is used only if the `JavaScript()` option is set `false`.
-// An invalid filename disables the feature.
-//
-//	`aFilename` The path/filename of sites with required JavaScript.
-func SetHostsNeedJS(aFilename string) {
-	ssOptions.HostsNeedJS = setHosts4JS(aFilename, ssHostsNeedJS)
-} // SetHostsNeedJS()
 
 // ImageAge returns the maximum age (in hours) of the locally stored
 // screenshot images.
@@ -1262,6 +1243,25 @@ func SetMobile(aMobile bool) {
 	ssOptions.Mobile = aMobile
 } // SetMobile()
 
+// NeedJSfile returns the name of the path/file containing
+// hosts/domains requiring JavaScript to be active/working.
+//
+// NOTE: This value is used only if the `JavaScript()` option is set `false`.
+func NeedJSfile() string {
+	return ssOptions.HostsNeedJSfile
+} // NeedJSfile()
+
+// SetNeedJSfile configures the name of the file containing
+// hosts/domains requiring JavaScript to be active/working.
+//
+// NOTE: This value is used only if the `JavaScript()` option is set `false`.
+// An invalid filename disables the feature.
+//
+//	`aFilename` The path/filename of sites with required JavaScript.
+func SetNeedJSfile(aFilename string) {
+	ssOptions.HostsNeedJSfile = setHosts4JS(aFilename, HostsNeedJS)
+} // SetNeedJSfile()
+
 // PathFile returns the complete local path/file of `aURL`.
 //
 // NOTE: This function does not check whether the file for `aURL`
@@ -1290,7 +1290,7 @@ func SetPlatform(aPlatform string) {
 	if aPlatform = strings.TrimSpace(aPlatform); 0 < len(aPlatform) {
 		ssOptions.Platform = aPlatform
 	} else {
-		ssOptions.Platform = ssDefaultPlatform
+		ssOptions.Platform = DefaultPlatform
 	}
 } // SetPlatform()
 
@@ -1356,7 +1356,7 @@ func SetUserAgent(aAgent string) {
 	if aAgent = strings.TrimSpace(aAgent); 0 < len(aAgent) {
 		ssOptions.UserAgent = aAgent
 	} else {
-		ssOptions.UserAgent = ssDefaultAgent
+		ssOptions.UserAgent = DefaultAgent
 	}
 } // SetUserAgent()
 

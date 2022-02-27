@@ -90,10 +90,10 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- JavaScript related settings:
 
-	flag.StringVar(&opts.HostsAvoidJS, `ja`, opts.HostsAvoidJS,
+	flag.StringVar(&opts.HostsAvoidJSfile, `ja`, opts.HostsAvoidJSfile,
 		"name of text-file that contains sites better avoiding JavaScript\n")
 
-	flag.StringVar(&opts.HostsNeedJS, `jn`, opts.HostsNeedJS,
+	flag.StringVar(&opts.HostsNeedJSfile, `jn`, opts.HostsNeedJSfile,
 		"name of text-file that contains sites needing JavaScript\n")
 
 	flag.StringVar(&opts.Platform, `jp`, opts.Platform,

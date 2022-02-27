@@ -21,23 +21,36 @@ import (
 // only the `-a {URL}` argument is required all other options use
 // reasonable default values.
 func processOptions() (rURL string, rVerbose bool) {
-	// get the library's default values:
-	opts := screenshot.Options()
+	var s string
+
+	opts := screenshot.Options() // get the library's default values
 
 	// --- setup handling of the program's commandline options
 
 	// --- browser related settings:
 
-	s := fmt.Sprintf(`allow the browser to handle web cookies (default %v)`, opts.Cookies)
+	s = `allow the browser to handle web cookies`
+	if !opts.Cookies {
+		s += ` (default false)`
+	}
 	flag.BoolVar(&opts.Cookies, `bc`, opts.Cookies, s)
 
-	s = fmt.Sprintf(`skip sites with Certificate errors (default %v)`, opts.CertErrors)
+	s = `skip sites with Certificate errors`
+	if !opts.CertErrors {
+		s += ` (default false)`
+	}
 	flag.BoolVar(&opts.CertErrors, `be`, opts.CertErrors, s)
 
-	s = fmt.Sprintf(`let browser emulate a mobile device (default %v)`, opts.Mobile)
+	s = `let browser emulate a mobile device`
+	if !opts.Mobile {
+		s += ` (default false)`
+	}
 	flag.BoolVar(&opts.Mobile, `bm`, opts.Mobile, s)
 
-	s = fmt.Sprintf(`let browser show scrollbars if available (default %v)`, opts.Scrollbars)
+	s = `let browser show scrollbars if available`
+	if !opts.Scrollbars {
+		s += ` (default false)`
+	}
 	flag.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
 
 	flag.Int64Var(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
@@ -45,8 +58,11 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- image related settings:
 
-	flag.BoolVar(&opts.AcceptOther, `ia`, opts.AcceptOther,
-		"accept the respective other image format")
+	s = `accept the respective other image format`
+	if !opts.AcceptOther {
+		s += ` (default false)`
+	}
+	flag.BoolVar(&opts.AcceptOther, `ia`, opts.AcceptOther, s)
 
 	flag.StringVar(&opts.ImageDir, `id`, opts.ImageDir,
 		"directory for storing the screenshot image")
@@ -54,11 +70,20 @@ func processOptions() (rURL string, rVerbose bool) {
 	flag.IntVar(&opts.ImageHeight, `ih`, opts.ImageHeight,
 		"max. height of the screenshot image")
 
+	s = `overwrite an existing image`
+	if !opts.ImageOverwrite {
+		s += ` (default false)`
+	}
+	flag.BoolVar(&opts.ImageOverwrite, `io`, opts.ImageOverwrite, s)
+
 	flag.IntVar(&opts.ImageQuality, `iq`, opts.ImageQuality,
 		"quality of the screenshot image")
 
-	flag.Float64Var(&opts.ImageScale, `is`, opts.ImageScale,
-		"the browser's scale factor for the screenshot image")
+	s = "the browser's scale factor for the screenshot image"
+	if 0 >= opts.ImageScale {
+		s += ` (default 0.00)`
+	}
+	flag.Float64Var(&opts.ImageScale, `is`, opts.ImageScale, s)
 
 	flag.IntVar(&opts.ImageWidth, `iw`, opts.ImageWidth,
 		"max. width of the screenshot image")
@@ -74,7 +99,10 @@ func processOptions() (rURL string, rVerbose bool) {
 	flag.StringVar(&opts.Platform, `jp`, opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
 
-	s = fmt.Sprintf(`allow browser's use of JavaScript (default %v)`, opts.JavaScript)
+	s = `allow browser's use of JavaScript`
+	if !opts.JavaScript {
+		s += ` (default false)`
+	}
 	flag.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
 
 	flag.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,

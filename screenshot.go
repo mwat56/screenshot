@@ -62,7 +62,7 @@ type (
 		// Flag whether certificate errors should be ignored.
 		CertErrors bool
 
-		// Allow use of web cookies
+		// Dis-/Allow use of web cookies
 		Cookies bool
 
 		// Path/filename of a list of web hosts/domains where JavaScript
@@ -82,6 +82,9 @@ type (
 		// Max. height of the screenshot image to generate.
 		ImageHeight int
 
+		// Dis-/Allow to overwrite pre-existing screenshot files.
+		ImageOverwrite bool
+
 		// Quality (in percent) of the screenshot image to generate.
 		ImageQuality int
 
@@ -92,7 +95,7 @@ type (
 		// Max. width of the screenshot image to generate.
 		ImageWidth int
 
-		// Flag whether to allow JavaScript in retrieved pages.
+		// Flag whether to dis-/allow JavaScript in retrieved pages.
 		JavaScript bool
 
 		// Timeout (in seconds) for page processing.
@@ -159,6 +162,7 @@ var (
 		JavaScript:     false,
 		MaxProcessTime: 32,
 		Mobile:         false,
+		ImageOverwrite: false, //FIXME opposite default??
 		Platform:       ssDefaultPlatform,
 		Scrollbars:     false,
 		UserAgent:      ssDefaultAgent,
@@ -188,6 +192,7 @@ func Options() (rOptions *ScreenshotParams) {
 		JavaScript:     ssOptions.JavaScript,
 		MaxProcessTime: ssOptions.MaxProcessTime,
 		Mobile:         ssOptions.Mobile,
+		ImageOverwrite: ssOptions.ImageOverwrite,
 		Platform:       ssOptions.Platform,
 		Scrollbars:     ssOptions.Scrollbars,
 		UserAgent:      ssOptions.UserAgent,
@@ -238,6 +243,7 @@ func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
 	SetImageAge(aOptions.ImageAge)
 	SetImageDir(aOptions.ImageDir)
 	SetImageHeight(aOptions.ImageHeight)
+	ssOptions.ImageOverwrite = aOptions.ImageOverwrite
 	SetImageQuality(aOptions.ImageQuality)
 	SetImageScale(aOptions.ImageScale)
 	SetImageWidth(aOptions.ImageWidth)
@@ -270,6 +276,7 @@ func String() string {
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageAge", ssOptions.ImageAge))
 	sb.WriteString(fmt.Sprintf(fmtStr, "ImageDir", ssOptions.ImageDir))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageHeight", ssOptions.ImageHeight))
+	sb.WriteString(fmt.Sprintf(fmtBoo, "ImageOverwrite", ssOptions.ImageOverwrite))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageQuality", ssOptions.ImageQuality))
 	sb.WriteString(fmt.Sprintf(fmtFlt, "ImageScale", ssOptions.ImageScale))
 	sb.WriteString(fmt.Sprintf(fmtInt, "ImageWidth", ssOptions.ImageWidth))
@@ -338,7 +345,7 @@ func chk4(aURL, aHostsFilename string) bool {
 } // chk4()
 
 // `cleanupOutput()` removes unneeded leading data from `aRawData`
-// and returns the properly encoded image.
+// and returns the properly encoded image data.
 //
 //	`aRawData` The raw image data to cleanup.
 func cleanupOutput(aRawData []byte) []byte {
@@ -382,7 +389,7 @@ func cleanupOutput(aRawData []byte) []byte {
 } // cleanupOutput()
 
 // `configure()` sets up how to take a screenshot of the entire browser
-// viewport the size of which is determined by `ImageWidth`/`ImageHeight`.
+// viewport the size of which is determined by `ImageWidth()`/`ImageHeight()`.
 //
 //	`aURL` The address of the web page to process.
 //	`aResult` Data structure to receive the generated screenshot image.
@@ -401,6 +408,19 @@ func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 	if enableJS {
 		waitDuration <<= 1 // four seconds
 	}
+	var (
+		imgHeight, imgWidth int64
+		imgScale            float64
+	)
+	if 0 < ssOptions.ImageHeight {
+		imgHeight = int64(ssOptions.ImageHeight)
+	}
+	if 0 < ssOptions.ImageWidth {
+		imgWidth = int64(ssOptions.ImageWidth)
+	}
+	if 0 < ssOptions.ImageScale {
+		imgScale = ssOptions.ImageScale
+	}
 
 	// Note: `chromedp.FullScreenshot()` overrides the device's
 	// emulation settings.
@@ -413,12 +433,15 @@ func configure(aURL string, aResult *[]byte) chromedp.Tasks {
 		emulation.ResetPageScaleFactor(),
 
 		// values of '0' will disable the override:
-		emulation.SetDeviceMetricsOverride(int64(ssOptions.ImageWidth), int64(ssOptions.ImageHeight), ssOptions.ImageScale, ssOptions.Mobile),
+		emulation.SetDeviceMetricsOverride(imgWidth, 0 /*imgHeight*/, imgScale, ssOptions.Mobile).
+			WithScreenWidth(imgWidth).
+			WithScreenHeight(imgHeight),
 
 		// setup some browser options:
 		emulation.SetDocumentCookieDisabled(!ssOptions.Cookies),
 		emulation.SetEmitTouchEventsForMouse(false),
-		emulation.SetFocusEmulationEnabled(false),
+		emulation.SetFocusEmulationEnabled(true),
+		emulation.SetIdleOverride(true, true),
 		emulation.SetScriptExecutionDisabled(!enableJS),
 		emulation.SetScrollbarsHidden(!ssOptions.Scrollbars),
 		// ignore certificate errors (e.g. self-signed):
@@ -551,12 +574,16 @@ func exists(aFilename string) bool {
 		return false
 	}
 
+	if ssOptions.ImageOverwrite {
+		return false
+	}
+
 	if 0 < ssOptions.ImageAge {
 		maxTime := fi.ModTime().Add(time.Duration(ssOptions.ImageAge) * time.Hour)
 		return time.Now().Before(maxTime)
 	}
 
-	return true
+	return true // `os.Stat()` found it
 } // exists()
 
 // `fileExt()` returns the filename extension of `aURL`.
@@ -765,13 +792,14 @@ func stat(aFilename string) (string, bool) {
 //	`aResponse` A (possibly NIL) response data from downloading an image file.
 func writeFile(aFilename string, aData []byte, aResponse *http.Response) (rErr error) {
 	if 0 == len(aFilename) {
-		return errors.New(ssLibName + ": empty file name argument")
+		rErr = errors.New(ssLibName + ": empty file name argument")
+		return
 	}
 
 	var file *os.File
 
 	if file, rErr = os.OpenFile(aFilename,
-		os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fs.FileMode(0640)); nil != rErr { /* #-nosec G302 */
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fs.FileMode(0640)); nil != rErr {
 		return
 	}
 	defer file.Close()
@@ -799,18 +827,10 @@ func writeFile(aFilename string, aData []byte, aResponse *http.Response) (rErr e
 
 // AcceptOther returns whether to respect the respective other image format.
 //
-// (See comments to the `SetAcceptOther()` function.)
-func AcceptOther() bool {
-	return ssOptions.AcceptOther
-} // AcceptOther()
-
-// AcceptOther returns whether to respect the respective other image format.
-//
 // The `CreateImage()` function checks whether a screenshot image already
-// exists and if so doesn't create a new one.
+// exists and – if so – doesn't create a new one.
 // The filename extension (and it's image format) is determined by the
-// `ImageQuality()` setting: if `100` it will be `png`, if less then `100`
-// (like the default value of `75`) it will be `jpeg`.
+// `ImageQuality()` setting: See the comments there.
 // Now, assume current `ImageType()` is configured `png` and `CreateImage()`
 // is called: To check whether there's already a screenshot present it
 // looks for the appropriate image file with a `png` extension.
@@ -819,6 +839,15 @@ func AcceptOther() bool {
 // `ImageType()` (`jpeg` in this example) is checked as well, and if that
 // file exists no further work is done and `CreateImage()` will return
 // the already existing filename.
+// See also `ImageOverwrite()`.
+//
+func AcceptOther() bool {
+	return ssOptions.AcceptOther
+} // AcceptOther()
+
+// AcceptOther returns whether to respect the respective other image format.
+//
+// (See comments to the `AcceptOther()` function.)
 //
 //	`doUse` If `true` (i.e. the default) an existing screenshot image
 // of the "other" format will satisfy.
@@ -971,7 +1000,7 @@ func CreateImage(aURL string) (string, error) {
 // HostsAvoidJS returns the name of the path/file containing
 // hosts/domains where to avoid running JavaScript.
 //
-// NOTE: This value is used only if the `JavaScript()` option is set `true`.
+// NOTE: This value is used only if the `JavaScript()` property is `true`.
 func HostsAvoidJS() string {
 	return ssOptions.HostsAvoidJS
 } // HostsAvoidJS()
@@ -979,7 +1008,7 @@ func HostsAvoidJS() string {
 // SetHostsAvoidJS configures the name of the file containing
 // hosts/domains where to avoid running JavaScript.
 //
-// NOTE: This value is used only if the `JavaScript` option is set `true`.
+// NOTE: This value is used only if the `JavaScript()` property is `true`.
 // An invalid filename disables the feature.
 //
 //	`aFilename` The path/filename of sites with JavaScript to avoid.
@@ -1073,9 +1102,7 @@ func ImageHeight() int {
 // to generate.
 // The default value is `768`.
 //
-// NOTE: This is the max. height of the screenshot.
-// Depending on the actual web-site and its rendering by the running
-// `Chrome` instance the generated image's height could be less.
+// See comments of `ImageHeight()`.
 //
 // Setting this value to `0` will result in an image containing the
 // whole web-page (which might be quite long); so the actual height
@@ -1090,6 +1117,25 @@ func SetImageHeight(aHeight int) {
 	}
 } // SetImageHeight()
 
+// ImageOverwrite returns whether an existing file should be overwritten.
+//
+// By default (i.e. with this value `false`) `CreateImage()` will not
+// replace an already existing image file by a new screenshot.
+// With this property set `true` the`CreateImage()` function will overwrite
+// any existing file regardless of e.g. age (see `ImageAge()`) or quality
+// (see `ImageQuality()`).
+func ImageOverwrite() bool {
+	return ssOptions.ImageOverwrite
+} // ImageOverwrite()
+
+// SetImageOverwrite sets an existing file should be overwritten.
+//
+// See comments of `ImageOverwrite()`:
+//	`anOverwrite` Whether an existing file should be overwritten.
+func SetImageOverwrite(anOverwrite bool) {
+	ssOptions.ImageOverwrite = anOverwrite
+} // SetImageOverwrite()
+
 // ImageQuality returns the desired image quality.
 func ImageQuality() int {
 	return ssOptions.ImageQuality
@@ -1097,11 +1143,11 @@ func ImageQuality() int {
 
 // SetImageQuality changes the quality of the screenshot image to be
 // generated.
-// Values supported between `1` and `100`; default is `75`.
+// Values are supported between `1` and `100`; default is `75`.
 //
 //	`aQuality` the new desired image quality.
 func SetImageQuality(aQuality int) {
-	if (0 < aQuality) && (101 > aQuality) {
+	if (0 < aQuality) && (100 >= aQuality) {
 		ssOptions.ImageQuality = aQuality // 'jpeg' format
 	} else {
 		ssOptions.ImageQuality = 100 // i.e. 'png' format
@@ -1153,9 +1199,7 @@ func ImageWidth() int {
 // SetImageWidth sets the width of the images to generate.
 // The default value is `1024`.
 //
-// NOTE: This is the max. width of the screenshot.
-// Depending on the actual web-site and its rendering by the running
-// 'Chrome' instance the generated image could be smaller.
+// See comments of `ImageWidth()`.
 //
 //	`aWidth` The new width of the images to generate.
 func SetImageWidth(aWidth int) {
@@ -1243,8 +1287,7 @@ func Platform() string {
 //
 //	`aPlatform` The platform identifier to use for `navigator.platform`.
 func SetPlatform(aPlatform string) {
-	aPlatform = strings.TrimSpace(aPlatform)
-	if 0 < len(aPlatform) {
+	if aPlatform = strings.TrimSpace(aPlatform); 0 < len(aPlatform) {
 		ssOptions.Platform = aPlatform
 	} else {
 		ssOptions.Platform = ssDefaultPlatform

@@ -107,10 +107,12 @@ It will show you all available commandline options e.g.:
 		directory for storing the screenshot image (default "/tmp")
 	-ih int
 		max. height of the screenshot image (default 768)
+	-io
+		overwrite an existing image (default false)
 	-iq int
 		quality of the screenshot image (default 75)
 	-is float
-		the browser's scale factor for the screenshot image
+		the browser's scale factor for the screenshot image (default 0.00)
 	-iw int
 		max. width of the screenshot image (default 896)
 	-ja string

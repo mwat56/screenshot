@@ -23,9 +23,9 @@ import (
 func processOptions() (rURL string, rVerbose bool) {
 	var s string
 
-	opts := screenshot.Options() // get the library's default values
-
 	// --- setup handling of the program's commandline options
+
+	opts := screenshot.Options() // get the library's default values
 
 	// --- browser related settings:
 
@@ -123,7 +123,7 @@ func processOptions() (rURL string, rVerbose bool) {
 
 	// --- setup the `screenshot` library:
 
-	screenshot.Setup(opts)
+	opts.Do()
 
 	return
 } // processOptions()

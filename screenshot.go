@@ -52,10 +52,10 @@ const (
 	ssLibName = `ScreenShot`
 )
 
-// ScreenshotParams bundles all available configuration Options and
-// pass them to the `Setup()` function in a single call.
+// TScreenshotParams bundles all available configuration options
+// and pass them to the `Setup()` function in a single call.
 type (
-	ScreenshotParams struct {
+	TScreenshotParams struct {
 		// Flag whether to accept the respective other image format
 		AcceptOther bool
 
@@ -147,7 +147,7 @@ var (
 	}
 
 	// The initially used screenshot options:
-	ssOptions *ScreenshotParams = &ScreenshotParams{
+	ssOptions *TScreenshotParams = &TScreenshotParams{
 		AcceptOther:      true,
 		CertErrors:       false,
 		Cookies:          false,
@@ -175,9 +175,63 @@ var (
 	ssReplaceNonAlphasRE = regexp.MustCompile(`\W+`)
 )
 
+// Do uses its options' values to configure the runtime options for
+// taking screenshots.
+//
+// NOTE: While it is perfectly legal (from Go's point of view) to omit
+// those fields you don't care about please be aware that those missing
+// fields will nevertheless be set (by `Go`): with the respective data
+// type's default value.
+// And since there's no way to distinguish the automatically set default
+// value of a missing field from a user provided value you have to handle
+// such a situation carefully.
+// Depending on the number of options you want to set you might want to
+// prefer calling the various `SetXxxx()` functions (if there are less
+// than half of the available options to set). Or – if you want to set
+// the majority of the options – you'd provide the options you do not
+// want to change with their already existing values by calling the
+// respective GETter function of the option in question, like:
+//
+//	myOptions := &TScreenshotParams{
+//		// set fields …
+//		ImageHeight:  myHeightValue,
+//		ImageQuality: myQualityValue,
+//		// …
+//		// say, you don't want to change the width option
+//		ImageWidth:   screenshot.ImageWidth(),
+//	}
+//	myOptions.Do()
+//	// continue with your program …
+func (sso *TScreenshotParams) Do() *TScreenshotParams {
+	if *sso == *ssOptions {
+		return Options() // nothing to change
+	}
+
+	ssOptions.AcceptOther = sso.AcceptOther
+	ssOptions.CertErrors = sso.CertErrors
+	ssOptions.Cookies = sso.Cookies
+	SetAvoidJSfile(sso.HostsAvoidJSfile)
+	SetNeedJSfile(sso.HostsNeedJSfile)
+	SetImageAge(sso.ImageAge)
+	SetImageDir(sso.ImageDir)
+	SetImageHeight(sso.ImageHeight)
+	ssOptions.ImageOverwrite = sso.ImageOverwrite
+	SetImageQuality(sso.ImageQuality)
+	SetImageScale(sso.ImageScale)
+	SetImageWidth(sso.ImageWidth)
+	ssOptions.JavaScript = sso.JavaScript
+	SetMaxProcessTime(sso.MaxProcessTime)
+	ssOptions.Mobile = sso.Mobile
+	ssOptions.Platform = sso.Platform
+	ssOptions.Scrollbars = sso.Scrollbars
+	SetUserAgent(sso.UserAgent)
+
+	return Options()
+} // Do()
+
 // Options returns the currently configured screenshot options.
-func Options() (rOptions *ScreenshotParams) {
-	rOptions = &ScreenshotParams{
+func Options() *TScreenshotParams {
+	return &TScreenshotParams{
 		AcceptOther:      ssOptions.AcceptOther,
 		CertErrors:       ssOptions.CertErrors,
 		Cookies:          ssOptions.Cookies,
@@ -197,65 +251,7 @@ func Options() (rOptions *ScreenshotParams) {
 		Scrollbars:       ssOptions.Scrollbars,
 		UserAgent:        ssOptions.UserAgent,
 	}
-
-	return
 } // Options()
-
-// Setup uses `aOptions` to configure the runtime options for
-// taking screenshots.
-//
-// NOTE: While it is perfectly legal (from Go's point of view) to omit
-// those fields you don't care about please be aware that those missing
-// fields will nevertheless be set (by `Go`): with the respective data
-// type's default value.
-// And since there's no way to distinguish the automatically set default
-// value of a missing field from a user provided value you have to handle
-// such a situation carefully.
-// Depending on the number of options you want to set you might want to
-// prefer calling the various `SetXxxx()` functions (if there are less
-// than half of the available options to set). Or – if you want to set
-// the majority of the options – you'd provide the options you do not
-// want to change with their already existing values by calling the
-// respective GETter function of the option in question, like:
-//
-//	myOptions := &ScreenshotParams{
-//		// set fields …
-//		ImageHeight:  myHeightValue,
-//		ImageQuality: myQualityValue,
-//		// …
-//		// say, you don't want to change the width option
-//		ImageWidth:   screenshot.ImageWidth(),
-//	}
-//	screenshot.Setup(myOptions)
-//	// continue with your program …
-//
-//	`aOptions` The screenshot options to use.
-func Setup(aOptions *ScreenshotParams) (rOptions *ScreenshotParams) {
-	if *aOptions == *ssOptions {
-		return Options() // nothing to change
-	}
-
-	ssOptions.AcceptOther = aOptions.AcceptOther
-	ssOptions.CertErrors = aOptions.CertErrors
-	ssOptions.Cookies = aOptions.Cookies
-	SetAvoidJSfile(aOptions.HostsAvoidJSfile)
-	SetNeedJSfile(aOptions.HostsNeedJSfile)
-	SetImageAge(aOptions.ImageAge)
-	SetImageDir(aOptions.ImageDir)
-	SetImageHeight(aOptions.ImageHeight)
-	ssOptions.ImageOverwrite = aOptions.ImageOverwrite
-	SetImageQuality(aOptions.ImageQuality)
-	SetImageScale(aOptions.ImageScale)
-	SetImageWidth(aOptions.ImageWidth)
-	ssOptions.JavaScript = aOptions.JavaScript
-	SetMaxProcessTime(aOptions.MaxProcessTime)
-	ssOptions.Mobile = aOptions.Mobile
-	ssOptions.Platform = aOptions.Platform
-	ssOptions.Scrollbars = aOptions.Scrollbars
-	SetUserAgent(aOptions.UserAgent)
-
-	return Options()
-} // Setup()
 
 // String returns a string of lines showing the currently configured
 // screenshot options.
@@ -291,6 +287,7 @@ func String() string {
 } // String()
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                           private functions                             */
 
 // `chk4()` checks for a match of `aURL` in hosts list `aHostsFile`
 //
@@ -497,13 +494,11 @@ func crop(aImgData image.Image) image.Image {
 	yIsBigger := (0 < ssOptions.ImageHeight) && (size.Y > ssOptions.ImageHeight)
 
 	if xIsBigger {
-		size.X = ssOptions.ImageWidth
 		doCrop = true
 	} else if size.X < ssOptions.ImageWidth {
 		doMagnify = true
 	}
 	if yIsBigger {
-		size.Y = ssOptions.ImageHeight
 		doCrop = true
 	} else if size.Y < ssOptions.ImageHeight {
 		doMagnify = true
@@ -512,27 +507,40 @@ func crop(aImgData image.Image) image.Image {
 	if doCrop {
 		// Either width or height or both are greater than
 		// the wanted/configured max. dimensions and are done.
+
 		if yIsBigger {
+			if xIsBigger { // Both, width and height, are too big.
+				result := image.NewRGBA(image.Rect(0, 0, ssOptions.ImageWidth, ssOptions.ImageHeight))
+
+				// Perform the actual shrinking:
+				draw.BiLinear.Scale(result, result.Rect, aImgData, bounds, draw.Over, nil)
+
+				return result
+			} // else: only `yIsBigger`
+
 			// We just cut off the part outside (below)
 			// our wanted/configured height.
 			return aImgData.(interface {
 				SubImage(aRect image.Rectangle) image.Image
 			}).
-				SubImage(image.Rect(0, 0, size.X, size.Y))
+				SubImage(image.Rect(0, 0, size.X, ssOptions.ImageHeight))
 		}
 
-		// Set the configured size:
-		result := image.NewRGBA(image.Rect(0, 0, ssOptions.ImageWidth, size.Y))
+		if xIsBigger {
+			return aImgData.(interface {
+				SubImage(aRect image.Rectangle) image.Image
+			}).
+				SubImage(image.Rect(0, 0, ssOptions.ImageWidth, size.Y))
+		}
 
-		// Perform the actual shrinking:
-		draw.BiLinear.Scale(result, result.Rect, aImgData, bounds, draw.Over, nil)
-
-		return result
+		// No `else` branch here because we get in this branch only
+		// if either `xIsBigger` or `yIsBigger` (or both) are `true`
+		// which are both handled above.
 	}
 
 	if doMagnify {
 		// Set the configured size:
-		result := image.NewRGBA(image.Rect(0, 0, size.X, size.Y))
+		result := image.NewRGBA(image.Rect(0, 0, ssOptions.ImageWidth, ssOptions.ImageHeight))
 
 		// Do the actual enlarging:
 		draw.BiLinear.Scale(result, result.Rect, aImgData, bounds, draw.Over, nil)
@@ -754,9 +762,7 @@ func setHosts4JS(aPathname, aNameConstant string) string {
 	}
 
 	if fName, ok := stat(aPathname); ok {
-		// if err := syscall.Access(fName, syscall.O_RDONLY); nil == err {
 		return fName
-		// }
 	}
 
 	return ""
@@ -839,6 +845,7 @@ func writeFile(aFilename string, aData []byte, aResponse *http.Response) (rErr e
 // `ImageType()` (`jpeg` in this example) is checked as well, and if that
 // file exists no further work is done and `CreateImage()` will return
 // the already existing filename.
+//
 // See also `ImageOverwrite()`.
 //
 func AcceptOther() bool {
@@ -874,18 +881,19 @@ func SetAvoidJSfile(aFilename string) {
 	ssOptions.HostsAvoidJSfile = setHosts4JS(aFilename, HostsAvoidJS)
 } // SetHostsAvoidJS()
 
-// CertErrors returns whether to skip sites with Certificate errors;
-// defaults to `false` for historic reasons.
+// CertErrors returns whether to skip sites with certificate errors;
+// defaults to `false` which in consequence ignores such errors.
 func CertErrors() bool {
 	return ssOptions.CertErrors
 } // CertErrors()
 
-// SetCertErrors determines whether to skip sites with certificate errors.
+// SetCertErrors determines whether to skip sites with certificate errors
+// or process the respective page anyway.
 //
-//	`doAllow` If `false` (i.e. the default) all web-sites will be processed
-// regardless of certificate errors.
-func SetCertErrors(doAllow bool) {
-	ssOptions.CertErrors = doAllow
+//	`doIgnore` If `false` (i.e. the default) all certificate errors will
+// be ignored and web-sites will be processed regardless of such errors.
+func SetCertErrors(doIgnore bool) {
+	ssOptions.CertErrors = doIgnore
 } // SetCertErrors()
 
 // Cookies returns whether to allow web cookies during page retrieval;
@@ -997,14 +1005,15 @@ func CreateImage(aURL string) (string, error) {
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err() // Canceled? TimeOut?
+
 		default:
 			break // still within our allocated time frame
 		}
 	}
 
 	if (0 == len(imageData)) && (nil == response) {
-		return "", errors.New(ssLibName +
-			": no data received for '" + fName + "'")
+		return "", errors.New(ssLibName + ": no data received for '" +
+			fName + "'")
 	}
 
 	if err = writeFile(fName, imageData, response); nil != err {
@@ -1067,10 +1076,10 @@ func SetImageDir(aDirectory string) {
 } // SetImageDir()
 
 // ImageHeight is the max. height of the virtual screen used to render.
-// The default value is `768`.
+// The initial default value is `768`.
 //
 // NOTE: This is the max. height of the screenshot.
-// Depending on the actual web-site and its rendering by the running
+// Depending on the actual web-site and its rendering by the used
 // 'Chrome' instance the generated image's height could be less.
 //
 // The value `0` (zero) renders the entire page top to bottom,
@@ -1081,7 +1090,7 @@ func ImageHeight() int {
 
 // SetImageHeight sets the height in pixels of the screenshot images
 // to generate.
-// The default value is `768`.
+// The initial default value is `768`.
 //
 // See comments of `ImageHeight()`.
 //
@@ -1112,9 +1121,9 @@ func ImageOverwrite() bool {
 // SetImageOverwrite sets an existing file should be overwritten.
 //
 // See comments of `ImageOverwrite()`:
-//	`anOverwrite` Whether an existing file should be overwritten.
-func SetImageOverwrite(anOverwrite bool) {
-	ssOptions.ImageOverwrite = anOverwrite
+//	`doAllow` Whether an existing file should be overwritten.
+func SetImageOverwrite(doAllow bool) {
+	ssOptions.ImageOverwrite = doAllow
 } // SetImageOverwrite()
 
 // ImageQuality returns the desired image quality.
@@ -1168,7 +1177,7 @@ func ImageType() string {
 } // ImageType()
 
 // ImageWidth is the width in pixels of the imaginary screen used to render.
-// The default value is `1024`.
+// The default value is `896`.
 //
 // NOTE: This is the max. width of the screenshot.
 // Depending on the actual web-site and its rendering by the running
@@ -1178,7 +1187,7 @@ func ImageWidth() int {
 } // ImageWidth()
 
 // SetImageWidth sets the width of the images to generate.
-// The default value is `1024`.
+// The initial default value is `896`.
 //
 // See comments of `ImageWidth()`.
 //
@@ -1197,17 +1206,18 @@ func JavaScript() bool {
 	return ssOptions.JavaScript
 } // JavaScript()
 
-// SetJavaScript determines whether to allow JavaScript during page
-// retrieval or not.
+// SetJavaScript determines whether to activate the JavaScript engine
+// during page retrieval or not.
 //
-//	`anAllow` If `false` (i.e. the default) no JavaScript will be available
+//	`doAllow` If `false` (i.e. the default) no JavaScript will be available
 // during page retrieval, otherwise (i.e. `true`) it will be activated.
-func SetJavaScript(anAllow bool) {
-	ssOptions.JavaScript = anAllow
+func SetJavaScript(doAllow bool) {
+	ssOptions.JavaScript = doAllow
 } // SetJavaScript()
 
 // MaxProcessTime returns the timeout (in seconds) used to
 // retrieve & render a requested web page.
+// The initial default value is `32`.
 func MaxProcessTime() int64 {
 	return ssOptions.MaxProcessTime
 } // MaxProcessTime()
@@ -1264,7 +1274,7 @@ func SetNeedJSfile(aFilename string) {
 
 // PathFile returns the complete local path/file of `aURL`.
 //
-// NOTE: This function does not check whether the file for `aURL`
+// NOTE: This function does not check whether the image file for `aURL`
 // actually exists in the local filesystem but just reports the default
 // path-/filename computed by string operations.
 //
@@ -1296,6 +1306,7 @@ func SetPlatform(aPlatform string) {
 
 // ReadWaitTime returns the number of minutes to wait before an Avoid/Need
 // hosts file is re-read.
+// The initial default value is `1`.
 func ReadWaitTime() int64 {
 	return ssReadWaitTime
 } // ReadWaitTime()
@@ -1344,17 +1355,19 @@ func UserAgent() string {
 	return ssOptions.UserAgent
 } // UserAgent()
 
-// SetUserAgent changes the current `User Agent` setting to `aAgent`.
+// SetUserAgent changes the current `User Agent` setting to `anAgent`.
 //
-// NOTE: This value is used only if the `JavaScript()` option is set `true`.
+// NOTE: This value is used by the virtual browser in its page requests
+// (and showing up in the page provider's logfile); if the `JavaScript()`
+// option is set `true` the JS-engine will return this value if requested.
 //
 // An invalid (empty) value resets this property to its current default of
 // `Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0`.
 //
-//	`aAgent` The new `User Agent` setting.
-func SetUserAgent(aAgent string) {
-	if aAgent = strings.TrimSpace(aAgent); 0 < len(aAgent) {
-		ssOptions.UserAgent = aAgent
+//	`anAgent` The new `User Agent` setting.
+func SetUserAgent(anAgent string) {
+	if anAgent = strings.TrimSpace(anAgent); 0 < len(anAgent) {
+		ssOptions.UserAgent = anAgent
 	} else {
 		ssOptions.UserAgent = DefaultAgent
 	}

@@ -30,6 +30,7 @@ func setupScreenshot() {
 	SetImageAge(0)
 	SetImageDir(testImgDirectory)
 	SetImageHeight(768)
+	SetImageOverwrite(true)
 	SetImageQuality(75)
 	SetImageScale(0.99)
 	SetImageWidth(896)
@@ -471,7 +472,7 @@ func TestCreateImage(t *testing.T) {
 
 	u1 := "https://www.buzzfeednews.com/article/alexkantrowitz/how-the-retweet-ruined-the-internet"
 	w1 := sanitise(u1) + "." + fileExt
-	u2 := "https://github.com/mwat56/pageview"
+	u2 := "https://github.com/mwat56/screenshot"
 	w2 := sanitise(u2) + "." + fileExt
 	u3 := "https://www.eff.org/"
 	w3 := sanitise(u3) + "." + fileExt
@@ -597,35 +598,6 @@ func TestSetHostsNeedJS(t *testing.T) {
 	testSetHosts4JS(t, HostsNeedJS)
 } // TestSetHostsNeedJS()
 
-func TestSetup(t *testing.T) {
-	setupScreenshot()
-
-	o1 := Options() // nothing changes
-
-	o2 := Options()
-	o2.ImageAge = 0 // matches default value
-
-	o3 := Options()
-	o3.ImageDir = "/tmp" // matches default value
-
-	tests := []struct {
-		name     string
-		aOptions *ScreenshotParams
-	}{
-		// TODO: Add test cases.
-		{" 1", o1},
-		{" 2", o2},
-		{" 3", o3},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Setup(tt.aOptions); !reflect.DeepEqual(got, tt.aOptions) {
-				t.Errorf("Setup() = »%v«,\nwant »%v«", got, tt.aOptions)
-			}
-		})
-	}
-} // TestSetup()
-
 func TestString(t *testing.T) {
 	setupScreenshot()
 	w1 := `AcceptOther:	true
@@ -662,3 +634,37 @@ UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0
 		})
 	}
 } // TestString()
+
+func TestTScreenshotParams_Do(t *testing.T) {
+	setupScreenshot()
+
+	o1 := Options() // nothing changes
+
+	o2 := Options()
+	o2.ImageAge = 0 // matches default value
+
+	o3 := Options()
+	o3.UserAgent = `browser sniffing is bad form`
+
+	o4 := Options()
+	o4.AcceptOther, o4.ImageHeight, o4.ImageWidth = false, 480, 640
+
+	tests := []struct {
+		name string
+		sso  *TScreenshotParams
+		want *TScreenshotParams
+	}{
+		// TODO: Add test cases.
+		{" 1", o1, o1},
+		{" 2", o2, o2},
+		{" 3", o3, o3},
+		{" 4", o4, o4},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.sso.Do(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TScreenshotParams.Do() = »%v«,\nwant »%v«", got, tt.want)
+			}
+		})
+	}
+} // TestTScreenshotParams_Do()

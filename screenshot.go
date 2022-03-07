@@ -532,7 +532,6 @@ func crop(aImgData image.Image) image.Image {
 			}).
 				SubImage(image.Rect(0, 0, ssOptions.ImageWidth, size.Y))
 		}
-
 		// No `else` branch here because we get in this branch only
 		// if either `xIsBigger` or `yIsBigger` (or both) are `true`
 		// which are both handled above.

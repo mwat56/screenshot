@@ -608,7 +608,7 @@ HostsNeedJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsneed
 ImageAge:	0
 ImageDir:	'/tmp'
 ImageHeight:	768
-ImageOverwrite:	false
+ImageOverwrite:	true
 ImageQuality:	75
 ImageScale:	0.99
 ImageWidth:	896

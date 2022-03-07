@@ -3,9 +3,9 @@ module github.com/mwat56/screenshot
 go 1.17
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20220217222649-d8c14a5c6edf
+	github.com/chromedp/cdproto v0.0.0-20220304215434-892afa710589
 	github.com/chromedp/chromedp v0.7.8
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
+	golang.org/x/image v0.0.0-20220302094943-723b81ca9867
 )
 
 require (

@@ -33,27 +33,27 @@ func processOptions() (rURL string, rVerbose bool) {
 	if !opts.Cookies {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.Cookies, `bc`, opts.Cookies, s)
+	flag.CommandLine.BoolVar(&opts.Cookies, `bc`, opts.Cookies, s)
 
 	s = `skip sites with Certificate errors`
 	if !opts.CertErrors {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.CertErrors, `be`, opts.CertErrors, s)
+	flag.CommandLine.BoolVar(&opts.CertErrors, `be`, opts.CertErrors, s)
 
 	s = `let browser emulate a mobile device`
 	if !opts.Mobile {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.Mobile, `bm`, opts.Mobile, s)
+	flag.CommandLine.BoolVar(&opts.Mobile, `bm`, opts.Mobile, s)
 
 	s = `let browser show scrollbars if available`
 	if !opts.Scrollbars {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
+	flag.CommandLine.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
 
-	flag.Int64Var(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
+	flag.CommandLine.Int64Var(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
 		"max. time (seconds) allowed to process a single web page")
 
 	// --- image related settings:
@@ -62,59 +62,59 @@ func processOptions() (rURL string, rVerbose bool) {
 	if !opts.AcceptOther {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.AcceptOther, `ia`, opts.AcceptOther, s)
+	flag.CommandLine.BoolVar(&opts.AcceptOther, `ia`, opts.AcceptOther, s)
 
-	flag.StringVar(&opts.ImageDir, `id`, opts.ImageDir,
+	flag.CommandLine.StringVar(&opts.ImageDir, `id`, opts.ImageDir,
 		"directory for storing the screenshot image")
 
-	flag.IntVar(&opts.ImageHeight, `ih`, opts.ImageHeight,
+	flag.CommandLine.IntVar(&opts.ImageHeight, `ih`, opts.ImageHeight,
 		"max. height of the screenshot image")
 
 	s = `overwrite an existing image`
 	if !opts.ImageOverwrite {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.ImageOverwrite, `io`, opts.ImageOverwrite, s)
+	flag.CommandLine.BoolVar(&opts.ImageOverwrite, `io`, opts.ImageOverwrite, s)
 
-	flag.IntVar(&opts.ImageQuality, `iq`, opts.ImageQuality,
+	flag.CommandLine.IntVar(&opts.ImageQuality, `iq`, opts.ImageQuality,
 		"quality of the screenshot image")
 
 	s = "the browser's scale factor for the screenshot image"
 	if 0 >= opts.ImageScale {
 		s += ` (default 0.00)`
 	}
-	flag.Float64Var(&opts.ImageScale, `is`, opts.ImageScale, s)
+	flag.CommandLine.Float64Var(&opts.ImageScale, `is`, opts.ImageScale, s)
 
-	flag.IntVar(&opts.ImageWidth, `iw`, opts.ImageWidth,
+	flag.CommandLine.IntVar(&opts.ImageWidth, `iw`, opts.ImageWidth,
 		"max. width of the screenshot image")
 
 	// --- JavaScript related settings:
 
-	flag.StringVar(&opts.HostsAvoidJSfile, `ja`, opts.HostsAvoidJSfile,
+	flag.CommandLine.StringVar(&opts.HostsAvoidJSfile, `ja`, opts.HostsAvoidJSfile,
 		"name of text-file that contains sites better avoiding JavaScript\n")
 
-	flag.StringVar(&opts.HostsNeedJSfile, `jn`, opts.HostsNeedJSfile,
+	flag.CommandLine.StringVar(&opts.HostsNeedJSfile, `jn`, opts.HostsNeedJSfile,
 		"name of text-file that contains sites needing JavaScript\n")
 
-	flag.StringVar(&opts.Platform, `jp`, opts.Platform,
+	flag.CommandLine.StringVar(&opts.Platform, `jp`, opts.Platform,
 		"Identifier the JavaScript `navigator.platform` should use")
 
 	s = `allow browser's use of JavaScript`
 	if !opts.JavaScript {
 		s += ` (default false)`
 	}
-	flag.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
+	flag.CommandLine.BoolVar(&opts.JavaScript, `js`, opts.JavaScript, s)
 
-	flag.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,
+	flag.CommandLine.StringVar(&opts.UserAgent, `ju`, opts.UserAgent,
 		"description of the UserAgent the browser should report\n")
 
 	// --- general options:
 
-	flag.StringVar(&rURL, `u`, rURL,
+	flag.CommandLine.StringVar(&rURL, `u`, rURL,
 		"(*required*) the URL for the browser's screenshot")
 
 	s = fmt.Sprintf(`verbose (default %v)`, rVerbose)
-	flag.BoolVar(&rVerbose, `v`, rVerbose, s)
+	flag.CommandLine.BoolVar(&rVerbose, `v`, rVerbose, s)
 
 	// --- process the commandline:
 
@@ -131,7 +131,7 @@ func processOptions() (rURL string, rVerbose bool) {
 // `showHelp()` lists the commandline options to `Stderr`.
 func showHelp() {
 	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTIONS]\n\n", os.Args[0])
-	flag.PrintDefaults()
+	flag.CommandLine.PrintDefaults()
 	fmt.Println()
 } // showHelp()
 

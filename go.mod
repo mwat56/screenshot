@@ -3,8 +3,8 @@ module github.com/mwat56/screenshot
 go 1.17
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20230107220653-6730ecaecb79
-	github.com/chromedp/chromedp v0.8.6
+	github.com/chromedp/cdproto v0.0.0-20230109101555-6b041c6303cc
+	github.com/chromedp/chromedp v0.8.7
 	golang.org/x/image v0.3.0
 )
 

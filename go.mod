@@ -3,9 +3,9 @@ module github.com/mwat56/screenshot
 go 1.17
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20230109101555-6b041c6303cc
-	github.com/chromedp/chromedp v0.8.7
-	golang.org/x/image v0.3.0
+	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
+	github.com/chromedp/chromedp v0.8.8
+	golang.org/x/image v0.6.0
 )
 
 require (
@@ -15,5 +15,5 @@ require (
 	github.com/gobwas/ws v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 )

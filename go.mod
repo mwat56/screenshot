@@ -1,9 +1,9 @@
 module github.com/mwat56/screenshot
 
-go 1.21
+go 1.22
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20240709201219-e202069cc16b
+	github.com/chromedp/cdproto v0.0.0-20240721024200-dac8efcb39ce
 	github.com/chromedp/chromedp v0.9.5
 	golang.org/x/image v0.18.0
 )

@@ -36,13 +36,13 @@ After that you can `import` it the usual Go way to use the library.
 
 There are only two functions you have to worry about:
 
-	// SetImageDir sets the directory to use for storing the generated
+	// `SetImageDir` sets the directory to use for storing the generated
 	// screenshot images.
 	//
 	// If `aDirectory` is empty or invalid the system's temp directory is used.
 	//
 	// `aDirectory` The directory to store the generated images.
-	func SetImageDir(aDirectory string) { … }
+	func SetImageDir(aDirectory string) { ... }
 
 This function should be called before any other one to make sure the generated screenshots end up where you want them to be. The default is the system's `temp` directory (e.g. `/tmp` under GNU/Linux).
 
@@ -143,7 +143,7 @@ In the end I started to look around, searching for alternative approaches – sh
 
 ## Licence
 
-        Copyright © 2022 M.Watermann, 10247 Berlin, Germany
+        Copyright © 2022, 2024  M.Watermann, 10247 Berlin, Germany
                         All rights reserved
                     EMail : <support@mwat.de>
 

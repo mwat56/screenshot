@@ -1,8 +1,10 @@
 /*
-   Copyright © 2022 M.Watermann, 10247 Berlin, Germany
-               All rights reserved
-           EMail : <support@mwat.de>
+Copyright © 2022, 2024  M.Watermann, 10247 Berlin, Germany
+
+			All rights reserved
+		EMail : <support@mwat.de>
 */
+
 package main
 
 //lint:file-ignore ST1017 - I prefer Yoda conditions
@@ -14,6 +16,8 @@ import (
 
 	"github.com/mwat56/screenshot"
 )
+
+//lint:file-ignore ST1017 - I prefer Yoda conditions
 
 // `processOptions()` handles the commandline arguments.
 //
@@ -53,7 +57,7 @@ func processOptions() (rURL string, rVerbose bool) {
 	}
 	flag.CommandLine.BoolVar(&opts.Scrollbars, `bs`, opts.Scrollbars, s)
 
-	flag.CommandLine.Int64Var(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
+	flag.CommandLine.IntVar(&opts.MaxProcessTime, `bt`, opts.MaxProcessTime,
 		"max. time (seconds) allowed to process a single web page")
 
 	// --- image related settings:

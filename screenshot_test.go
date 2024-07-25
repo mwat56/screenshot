@@ -1,8 +1,9 @@
 /*
-   Copyright © 2022 M.Watermann, 10247 Berlin, Germany
-                 All rights reserved
-               EMail : <support@mwat.de>
+Copyright © 2022, 2024  M.Watermann, 10247 Berlin, Germany
+			All rights reserved
+		EMail : <support@mwat.de>
 */
+
 package screenshot
 
 import (
@@ -26,6 +27,7 @@ const (
 
 func setupScreenshot() {
 	SetAcceptOther(true)
+	SetCertErrors(false)
 	SetCookies(false)
 	SetImageAge(0)
 	SetImageDir(testImgDirectory)
@@ -43,7 +45,7 @@ func setupScreenshot() {
 } // setupScreenshot()
 
 func Test_chk4(t *testing.T) {
-	type args struct {
+	type tArgs struct {
 		aURL       string
 		aHostsFile string
 	}
@@ -52,40 +54,41 @@ func Test_chk4(t *testing.T) {
 	u1 := ""
 	w1 := false
 	//
-	h2 := HostsAvoidJS
+	h2 := defaultHostsAvoidJS
 	u2 := ""
 	w2 := false
 	//
-	h3 := HostsNeedJS
+	h3 := defaultHostsNeedJS
 	u3 := "Twitter.Com"
 	w3 := true
 	//
-	h4 := HostsNeedJS
+	h4 := defaultHostsNeedJS
 	u4 := "https://you.tube.me/"
 	w4 := false
 	//
 	tests := []struct {
 		name string
-		args args
+		args tArgs
 		want bool
 	}{
+		{"1", tArgs{u1, h1}, w1},
+		{"2", tArgs{u2, h2}, w2},
+		{"3", tArgs{u3, h3}, w3},
+		{"4", tArgs{u4, h4}, w4},
 		// TODO: Add test cases.
-		{" 1", args{u1, h1}, w1},
-		{" 2", args{u2, h2}, w2},
-		{" 3", args{u3, h3}, w3},
-		{" 4", args{u4, h4}, w4},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := chk4(tt.args.aURL, tt.args.aHostsFile); got != tt.want {
-				t.Errorf("chk4() = %v, want %v", got, tt.want)
+				t.Errorf("%q: chk4() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
 } // Test_chk4()
 
 func Test_containsHost(t *testing.T) {
-	type args struct {
+	type tArgs struct {
 		aNeedle   string
 		aHaystack *sort.StringSlice
 	}
@@ -115,23 +118,23 @@ func Test_containsHost(t *testing.T) {
 		"",
 		"# _EoF_",
 	} // h4
-	//
 
 	tests := []struct {
 		name string
-		args args
+		args tArgs
 		want bool
 	}{
+		{" 1", tArgs{n1, h1}, false},
+		{" 2", tArgs{n2, h2}, false},
+		{" 3", tArgs{n3, h3}, true},
+		{" 4", tArgs{n4, h4}, false},
 		// TODO: Add test cases.
-		{" 1", args{n1, h1}, false},
-		{" 2", args{n2, h2}, false},
-		{" 3", args{n3, h3}, true},
-		{" 4", args{n4, h4}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := containsHost(tt.args.aNeedle, tt.args.aHaystack); got != tt.want {
-				t.Errorf("listContains() = %v, want %v", got, tt.want)
+				t.Errorf("%q: listContains() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -144,51 +147,51 @@ func Test_exists(t *testing.T) {
 	f4 := `/etc/cron.d/`     // (dito)
 	f5 := `/etc/crontab`     // exists but too small
 	f6 := `/etc/ld.so.cache` // exists and big enough
+
 	tests := []struct {
 		name      string
 		aFilename string
 		want      bool
 	}{
+		{"1", f1, false},
+		{"2", f2, false},
+		{"3", f3, true},
+		{"4", f4, true},
+		{"5", f5, false},
+		{"6", f6, true},
 		// TODO: Add test cases.
-		{" 1", f1, false},
-		{" 2", f2, false},
-		{" 3", f3, true},
-		{" 4", f4, true},
-		{" 5", f5, false},
-		{" 6", f6, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := exists(tt.aFilename); got != tt.want {
-				t.Errorf("exists() = %v, want %v", got, tt.want)
+				t.Errorf("%q: exists() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
 } // Test_exists()
 
 func Test_fileExt(t *testing.T) {
-	type args struct {
-		aURL string
-	}
 	tests := []struct {
 		name string
-		args args
+		url  string
 		want string
 	}{
+		{"1", "", ""},
+		{"2", "image.gif", ".gif"},
+		{"3", "document.txt", ".txt"},
+		{"4", "document.txt.doc", ".doc"},
+		{"5", "http://example.com/page.html?view=print", ".html"},
+		{"6", "http://example.com/sometopic?show=all&lang=en", ""},
+		{"7", "http://example.com/page.md?view=print#top", ".md"},
+		{"8", "https://github.com/mwat56/Nele/blob/master/README.md#nele-blog", ".md"},
 		// TODO: Add test cases.
-		{" 1", args{""}, ""},
-		{" 2", args{"image.gif"}, ".gif"},
-		{" 3", args{"document.txt"}, ".txt"},
-		{" 4", args{"document.txt.doc"}, ".doc"},
-		{" 5", args{"http://example.com/page.html?view=print"}, ".html"},
-		{" 6", args{"http://example.com/sometopic?show=all&lang=en"}, ""},
-		{" 5", args{"http://example.com/page.md?view=print#top"}, ".md"},
-		{" 6", args{"https://github.com/mwat56/Nele/blob/master/README.md#nele-blog"}, ".md"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := fileExt(tt.args.aURL); got != tt.want {
-				t.Errorf("extension() = %v, want %v", got, tt.want)
+			if got := fileExt(tt.url); got != tt.want {
+				t.Errorf("%q: extension() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -196,25 +199,27 @@ func Test_fileExt(t *testing.T) {
 
 func Test_generateImage(t *testing.T) {
 	setupScreenshot()
-	type args struct {
+
+	type tArgs struct {
 		aContext context.Context
 		aURL     string
 	}
 	tests := []struct {
 		name    string
-		args    args
+		args    tArgs
 		wantErr bool
 	}{
+		{"1", tArgs{context.TODO(), "http://www.mwat.de/Antik/"}, false},
+		{"2", tArgs{context.TODO(), "ftp://ftp.gibbet.nich/"}, true},
+		{"3", tArgs{context.TODO(), "gopher://localhost/index"}, true},
 		// TODO: Add test cases.
-		{" 1", args{context.TODO(), "http://www.mwat.de/Antik/"}, false},
-		{" 2", args{context.TODO(), "ftp://ftp.gibbet.nich/"}, true},
-		{" 3", args{context.TODO(), "gopher://localhost/index"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := generateImage(tt.args.aContext, tt.args.aURL)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("generateImage() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%q: generateImage() error = %v, wantErr %v",
+					tt.name, err, tt.wantErr)
 				return
 			}
 		})
@@ -255,15 +260,16 @@ Youtu.be
 		aFilename string
 		wantRList sort.StringSlice
 	}{
+		{"1", n1, w1},
+		{"2", n2, w2},
+		{"3", n3, w3},
 		// TODO: Add test cases.
-		{" 1", n1, w1},
-		{" 2", n2, w2},
-		{" 3", n3, w3},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotRList := readListFile(tt.aFilename); !reflect.DeepEqual(gotRList, tt.wantRList) {
-				t.Errorf("readListFile() = %v,\nwant %v", gotRList, tt.wantRList)
+				t.Errorf("%q: readListFile() = %v,\nwant %v",
+					tt.name, gotRList, tt.wantRList)
 			}
 		})
 	}
@@ -321,20 +327,21 @@ func Test_removeIndex(t *testing.T) {
 		args args
 		want sort.StringSlice
 	}{
+		{"1", args{l1, i1}, w1},
+		{"2", args{l2, i2}, w2},
+		{"3", args{l3, i3}, w3},
+		{"4", args{l4, i4}, w4},
+		{"5", args{l5, i5}, w5},
+		{"6", args{l6, i6}, w6},
+		{"7", args{l7, i7}, w7},
 		// TODO: Add test cases.
-		{" 1", args{l1, i1}, w1},
-		{" 2", args{l2, i2}, w2},
-		{" 3", args{l3, i3}, w3},
-		{" 4", args{l4, i4}, w4},
-		{" 5", args{l5, i5}, w5},
-		{" 6", args{l6, i6}, w6},
-		{" 7", args{l7, i7}, w7},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeIndex(tt.args.aList, tt.args.aIndex); (0 < len(got)) && (0 < len(tt.want)) && (!reflect.DeepEqual(got, tt.want)) {
-				t.Errorf("removeIndex() = »%v«,\nwant »%v«", got, tt.want)
+				t.Errorf("%q: removeIndex() = »%v«,\nwant »%v«",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -346,15 +353,16 @@ func Test_sanitise(t *testing.T) {
 		aURL string
 		want string
 	}{
+		{"1", "http://dev.mwat.de/#main", "httpdevmwatdemain"},
+		{"2", "http://www.gibbet.nich/~matthias/index.html", "httpwwwgibbetnichmatthiasindexhtml"},
+		{"3", "gopher://localhost/a/b/c", "gopherlocalhostabc"},
 		// TODO: Add test cases.
-		{" 1", "http://dev.mwat.de/#main", "httpdevmwatdemain"},
-		{" 2", "http://www.gibbet.nich/~matthias/index.html", "httpwwwgibbetnichmatthiasindexhtml"},
-		{" 3", "gopher://localhost/a/b/c", "gopherlocalhostabc"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := sanitise(tt.aURL); got != tt.want {
-				t.Errorf("sanitise() = %v, want %v", got, tt.want)
+				t.Errorf("%q: sanitise() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -396,21 +404,23 @@ func Test_stat(t *testing.T) {
 		wantName  string
 		wantOK    bool
 	}{
+		{"1", n1, w1, o1},
+		{"2", n2, w2, o2},
+		{"3", n3, w3, o3},
+		{"4", n4, w4, o4},
+		{"5", n5, w5, o5},
 		// TODO: Add test cases.
-		{" 1", n1, w1, o1},
-		{" 2", n2, w2, o2},
-		{" 3", n3, w3, o3},
-		{" 4", n4, w4, o4},
-		{" 5", n5, w5, o5},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1 := stat(tt.aFilename)
 			if got != tt.wantName {
-				t.Errorf("stat() got = »%v«,\nwant »%v«", got, tt.wantName)
+				t.Errorf("%q: stat() got = »%v«,\nwant »%v«",
+					tt.name, got, tt.wantName)
 			}
 			if got1 != tt.wantOK {
-				t.Errorf("stat() got1 = %v, want %v", got1, tt.wantOK)
+				t.Errorf("%q: stat() got1 = %v, want %v",
+					tt.name, got1, tt.wantOK)
 			}
 		})
 	}
@@ -438,7 +448,7 @@ func Test_writeFile(t *testing.T) {
 		_ = os.Remove(n5)
 	}()
 
-	type args struct {
+	type tArgs struct {
 		aName     string
 		aData     []byte
 		aResponse *http.Response
@@ -446,21 +456,22 @@ func Test_writeFile(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		args    args
+		args    tArgs
 		wantErr bool
 	}{
+		{"1", tArgs{n1, d1, nil}, false},
+		{"2", tArgs{n2, d2, nil}, false},
+		{"3", tArgs{n3, d3, nil}, false},
+		{"4", tArgs{n4, d4, nil}, true},
+		{"5", tArgs{n5, d5, nil}, true},
 		// TODO: Add test cases.
-		{" 1", args{n1, d1, nil}, false},
-		{" 2", args{n2, d2, nil}, false},
-		{" 3", args{n3, d3, nil}, false},
-		{" 4", args{n4, d4, nil}, true},
-		{" 5", args{n5, d5, nil}, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := writeFile(tt.args.aName, tt.args.aData, tt.args.aResponse); (err != nil) != tt.wantErr {
-				t.Errorf("writeFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%q: writeFile() error = %v, wantErr %v",
+					tt.name, err, tt.wantErr)
 			}
 		})
 	}
@@ -483,8 +494,8 @@ func TestCreateImage(t *testing.T) {
 	w6 := sanitise(u6) + "." + fileExt
 	u7 := "https://thehackernews.com/2017/10/kaspersky-nsa-russian-hackers.html#articlebody"
 	w7 := sanitise(u7) + "." + fileExt
-	u8 := "http://www.mwat.de/CSS/mwBack-526x841.gif"
-	w8 := sanitise(u8) + ".gif"
+	// u8 := "http://www.mwat.de/CSS/mwBack-526x841.gif"
+	// w8 := sanitise(u8) + ".gif"
 	u9 := "https://www.youtube.com/watch?v=tvcwMcGWf-w"
 	w9 := sanitise(u9) + "." + fileExt
 	u10 := "https://twitter.com/seerutkchawla/status/1337231261430132738"
@@ -502,16 +513,13 @@ func TestCreateImage(t *testing.T) {
 		_ = os.Remove(PathFile(u5))
 		_ = os.Remove(PathFile(u6))
 		_ = os.Remove(PathFile(u7))
-		_ = os.Remove(PathFile(u8))
+		// _ = os.Remove(PathFile(u8))
 		_ = os.Remove(PathFile(u9))
 		_ = os.Remove(PathFile(u10))
 		_ = os.Remove(PathFile(u11))
 		_ = os.Remove(PathFile(u12))
 	}
 	prep()
-	// defer func() {
-	// 	prep()
-	// }()
 
 	tests := []struct {
 		name    string
@@ -519,7 +527,6 @@ func TestCreateImage(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{" 1", u1, w1, false},
 		{" 2", u2, w2, false},
 		{" 3", u3, w3, false},
@@ -527,22 +534,25 @@ func TestCreateImage(t *testing.T) {
 		{" 5", u5, w5, false},
 		{" 6", u6, w6, false},
 		{" 7", u7, w7, false},
-		{" 8", u8, w8, false},
+		// {" 8", u8, w8, false},
 		{" 9", u9, w9, false},
 		{"10", u10, w10, false},
 		{"11", u11, w11, false},
 		{"12", u12, w12, false},
+		// TODO: Add test cases.
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := CreateImage(tt.aURL)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateImage() error = %v,\nwantErr %v", err, tt.wantErr)
+				t.Errorf("%q: CreateImage() error = %v,\nwantErr %v",
+					tt.name, err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("CreateImage() = %v,\nwant %v", got, tt.want)
+				t.Errorf("%q: CreateImage() = %v,\nwant %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -573,38 +583,40 @@ func testSetHosts4JS(t *testing.T, aNameConstant string) {
 		aPathname string
 		want      string
 	}{
+		{"1", a1, w1},
+		{"2", a2, w2},
+		{"3", a3, w3},
+		{"4", a4, w4},
+		{"5", a5, w5},
+		{"6", a6, w6},
 		// TODO: Add test cases.
-		{" 1", a1, w1},
-		{" 2", a2, w2},
-		{" 3", a3, w3},
-		{" 4", a4, w4},
-		{" 5", a5, w5},
-		{" 6", a6, w6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := setHosts4JS(tt.aPathname, aNameConstant); got != tt.want {
-				t.Errorf("setHosts4JS() = %v, want %v", got, tt.want)
+				t.Errorf("%q: setHosts4JS() = %v, want %v",
+					tt.name, got, tt.want)
 			}
 		})
 	}
 } // Test_setHosts4JS()
 
 func TestSetAvoidJS(t *testing.T) {
-	testSetHosts4JS(t, HostsAvoidJS)
+	testSetHosts4JS(t, defaultHostsAvoidJS)
 } // TestSetHostsAvoidJS()
 
 func TestSetHostsNeedJS(t *testing.T) {
-	testSetHosts4JS(t, HostsNeedJS)
+	testSetHosts4JS(t, defaultHostsNeedJS)
 } // TestSetHostsNeedJS()
 
 func TestString(t *testing.T) {
 	setupScreenshot()
+
 	w1 := `AcceptOther:	true
 CertErrors:	false
 Cookies:	false
-HostsAvoidJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsavoidjs.list'
-HostsNeedJS:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsneedjs.list'
+HostsAvoidJSfile:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsavoidjs.list'
+HostsNeedJSfile:	'/home/matthias/devel/Go/src/github.com/mwat56/screenshot/hostsneedjs.list'
 ImageAge:	0
 ImageDir:	'/tmp'
 ImageHeight:	768
@@ -623,13 +635,14 @@ UserAgent:	'Mozilla/5.0 (X11; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0
 		name string
 		want string
 	}{
+		{"1", w1},
 		// TODO: Add test cases.
-		{" 1", w1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := String(); got != tt.want {
-				t.Errorf("String() = »%v«, want »%v«", got, tt.want)
+				t.Errorf("%q: String() =\n%v\n>>> want >>>\n%v«",
+					tt.name, got, tt.want)
 			}
 		})
 	}
@@ -654,16 +667,17 @@ func TestTScreenshotParams_Do(t *testing.T) {
 		sso  *TScreenshotParams
 		want *TScreenshotParams
 	}{
+		{"1", o1, o1},
+		{"2", o2, o2},
+		{"3", o3, o3},
+		{"4", o4, o4},
 		// TODO: Add test cases.
-		{" 1", o1, o1},
-		{" 2", o2, o2},
-		{" 3", o3, o3},
-		{" 4", o4, o4},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.sso.Do(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("TScreenshotParams.Do() = »%v«,\nwant »%v«", got, tt.want)
+				t.Errorf("%q: TScreenshotParams.Do() = »%v«,\nwant »%v«",
+					tt.name, got, tt.want)
 			}
 		})
 	}

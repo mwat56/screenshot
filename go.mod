@@ -5,9 +5,9 @@ go 1.23
 toolchain go1.23.3
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20241208230723-d1c7de7e5dd2
-	github.com/chromedp/chromedp v0.11.2
-	golang.org/x/image v0.23.0
+	github.com/chromedp/cdproto v0.0.0-20250210231439-aea867ea8506
+	github.com/chromedp/chromedp v0.12.1
+	golang.org/x/image v0.24.0
 )
 
 require (
@@ -17,5 +17,5 @@ require (
 	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 )

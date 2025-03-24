@@ -143,7 +143,7 @@ In the end I started to look around, searching for alternative approaches – sh
 
 ## Licence
 
-        Copyright © 2022, 2024  M.Watermann, 10247 Berlin, Germany
+        Copyright © 2022, 2025  M.Watermann, 10247 Berlin, Germany
                         All rights reserved
                     EMail : <support@mwat.de>
 
